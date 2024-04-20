@@ -3,21 +3,25 @@ name: Test Action
 on:
   workflow_dispatch:
     inputs:
-      version:
+      string:
         type: string
-        default: v1
+        default: a string
+      boolean:
+        type: boolean
+        default: true
+      int:
+        type: number
+        default: 42
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - name: "Test Action"
-        uses: mentalsmash/action-workflow-pyconfig@${{ inputs.version }}
+        uses: mentalsmash/action-workflow-pyconfig@v1
         id: config
         with:
-          env: ${{ toJson(env) }}
           github: ${{ toJson(github) }}
-          inputs: ${{ toJson(inputs) }}
           outputs: |
             FOO=cfg.foo
             BAR=cfg.dyn.bar
@@ -42,10 +46,9 @@ jobs:
       BAR: ${{ steps.config.outputs.BAR }}
     steps:
       - name: "Test Action"
-        uses: mentalsmash/action-workflow-pyconfig@${{ inputs.version }}
+        uses: mentalsmash/action-workflow-pyconfig@v1
         id: config
         with:
-          env: ${{ toJson(env) }}
           github: ${{ toJson(github) }}
           inputs: ${{ toJson(inputs) }}
           workflow: test_action
