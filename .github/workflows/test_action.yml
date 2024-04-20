@@ -25,6 +25,11 @@ jobs:
           outputs: |
             FOO=cfg.foo
             BAR=cfg.dyn.bar
+      - name: Debug Outputs
+        run: |
+          echo "CLONE_DIR='${steps.config.outputs.CLONE_DIR}'"
+          echo "FOO='${steps.config.outputs.FOO}'"
+          echo "BAR='${steps.config.outputs.BAR}'"
       - name: "Fail if CLONE_DIR wasn't set"
         if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
         run: |
@@ -45,7 +50,7 @@ jobs:
       FOO: ${{ steps.config.outputs.FOO }}
       BAR: ${{ steps.config.outputs.BAR }}
     steps:
-      - name: "Test Action"
+      - name: Load workflow configuration
         uses: mentalsmash/action-workflow-pyconfig@v1
         id: config
         with:
@@ -56,6 +61,15 @@ jobs:
             FOO=cfg.foo
             BAR=cfg.dyn.bar
             A_FUCNTION_OUTPUT=cfg.dyn.a_function_output
+
+
+      - name: Debug Outputs
+        run: |
+          echo "CLONE_DIR='${steps.config.outputs.CLONE_DIR}'"
+          echo "FOO='${steps.config.outputs.FOO}'"
+          echo "BAR='${steps.config.outputs.BAR}'"
+          echo "A_FUNCTION_OUTPUT='${steps.config.outputs.A_FUNCTION_OUTPUT}'"
+          
       - name: "Fail if CLONE_DIR wasn't set"
         if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
         run: |
