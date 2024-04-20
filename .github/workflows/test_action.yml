@@ -1,0 +1,71 @@
+name: Test Action
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        default: v1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Test Action"
+        uses: mentalsmash/action-workflow-pyconfig@${{ inputs.version }}
+        id: config
+        with:
+          env: ${{ toJson(env) }}
+          github: ${{ toJson(github) }}
+          inputs: ${{ toJson(inputs) }}
+          outputs: |
+            FOO=cfg.foo
+            BAR=cfg.dyn.bar
+      - name: "Fail if CLONE_DIR wasn't set"
+        if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
+        run: |
+          exit 1
+      - name: "Fail if FOO wasn't set"
+        if: ${{ steps.config.outputs.FOO != 'foo' }}
+        run: |
+          exit 1
+      - name: "Fail if BAR wasn't set"
+        if: ${{ steps.config.outputs.BAR != 'bar.foo' }}
+        run: |
+          exit 1
+  
+  test-w-workflow:
+    runs-on: ubuntu-latest
+    outputs:
+      CLONE_DIR: ${{ steps.config.outputs.CLONE_DIR }}
+      FOO: ${{ steps.config.outputs.FOO }}
+      BAR: ${{ steps.config.outputs.BAR }}
+    steps:
+      - name: "Test Action"
+        uses: mentalsmash/action-workflow-pyconfig@${{ inputs.version }}
+        id: config
+        with:
+          env: ${{ toJson(env) }}
+          github: ${{ toJson(github) }}
+          inputs: ${{ toJson(inputs) }}
+          workflow: test_action
+          outputs: |
+            FOO=cfg.foo
+            BAR=cfg.dyn.bar
+            A_FUCNTION_OUTPUT=cfg.dyn.a_function_output
+      - name: "Fail if CLONE_DIR wasn't set"
+        if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
+        run: |
+          exit 1
+      - name: "Fail if FOO wasn't set"
+        if: ${{ steps.config.outputs.FOO != 'foo' }}
+        run: |
+          exit 1
+      - name: "Fail if BAR wasn't set"
+        if: ${{ steps.config.outputs.BAR != 'foo.bar' }}
+        run: |
+          exit 1
+      - name: "Fail if A_FUCNTION_OUTPUT wasn't set"
+        if: ${{ steps.config.outputs.A_FUCNTION_OUTPUT != 'foo.bar.a_function' }}
+        run: |
+          exit 1
