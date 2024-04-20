@@ -27,9 +27,9 @@ jobs:
             BAR=cfg.dyn.bar
       - name: Debug Outputs
         run: |
-          echo "CLONE_DIR='${steps.config.outputs.CLONE_DIR}'"
-          echo "FOO='${steps.config.outputs.FOO}'"
-          echo "BAR='${steps.config.outputs.BAR}'"
+          echo "CLONE_DIR='${{steps.config.outputs.CLONE_DIR}}'"
+          echo "FOO='${{steps.config.outputs.FOO}}'"
+          echo "BAR='${{steps.config.outputs.BAR}}'"
       - name: "Fail if CLONE_DIR wasn't set"
         if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
         run: |
@@ -65,10 +65,10 @@ jobs:
 
       - name: Debug Outputs
         run: |
-          echo "CLONE_DIR='${steps.config.outputs.CLONE_DIR}'"
-          echo "FOO='${steps.config.outputs.FOO}'"
-          echo "BAR='${steps.config.outputs.BAR}'"
-          echo "A_FUNCTION_OUTPUT='${steps.config.outputs.A_FUNCTION_OUTPUT}'"
+          echo "CLONE_DIR='${{steps.config.outputs.CLONE_DIR}}'"
+          echo "FOO='${{steps.config.outputs.FOO}}'"
+          echo "BAR='${{steps.config.outputs.BAR}}'"
+          echo "A_FUNCTION_OUTPUT='${{steps.config.outputs.A_FUNCTION_OUTPUT}}'"
           
       - name: "Fail if CLONE_DIR wasn't set"
         if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
