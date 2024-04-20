@@ -27,6 +27,6 @@ def configure(
   assert inputs.boolean
   assert inputs.int == 42
   return {
-    "a_function_output": a_function(cfg.dyn.bar),
+    "A_FUNCTION_OUTPUT": a_function(cfg.dyn.bar),
   }
 
