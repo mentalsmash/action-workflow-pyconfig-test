@@ -66,7 +66,7 @@ runs:
           echo "MANIFEST<<EOF"
           cat ${MANIFEST}
           echo EOF
-        ) >> ${{$GITHUB_OUTPUT}}
+        ) >> ${GITHUB_OUTPUT}
       env:
         MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json
 
@@ -84,6 +84,6 @@ runs:
           echo "LAYERS<<EOF"
           echo "${layers}"
           echo EOF
-        ) >> ${$GITHUB_OUTPUT}
+        ) >> ${GITHUB_OUTPUT}
       env:
         MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json
