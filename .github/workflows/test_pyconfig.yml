@@ -27,7 +27,7 @@ jobs:
           submodules: true
 
       - name: Test Action
-        uses: mentalsmash/action-workflow-pyconfig-test/actions/pyconfig/configuration@master
+        uses: mentalsmash/actions/pyconfig/configuration@master
         with:
           clone-dir: src/repo
           workflow: test_action
@@ -85,7 +85,7 @@ jobs:
           exit 1
 
       - name: Test Action
-        uses: mentalsmash/action-workflow-pyconfig-test/actions/pyconfig/summary@master
+        uses: mentalsmash/actions/pyconfig/summary@master
         with:
           clone-dir: src/repo
           workflow: test_action
