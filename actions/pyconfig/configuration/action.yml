@@ -27,7 +27,7 @@ inputs:
     description: The workflow's `inputs` context as a JSON string.
     required: false
     default: ''
-  outputs:
+  output:
     description: A JSON file with the final configuration.
     required: false
     default: .pyconfig.json
