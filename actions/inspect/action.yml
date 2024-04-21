@@ -42,8 +42,10 @@ outputs:
     value: ${{ steps.manifest.outputs.MANIFEST }}
   layers:
     description: New-line separeted list of hashes.
-    value: ${{ steps.layers.outputs.LAYERS }}
-  
+    value: ${{ steps.manifest.outputs.LAYERS }}
+  files:
+    description: New-line separeted list of generated files.
+    value: ${{ steps.manifest.outputs.FILES }}
 runs:
   using: "composite"
   steps:
@@ -60,30 +62,38 @@ runs:
       shell: bash
       run: |
         # Download JSON manifest
-        docker buildx imagetools inspect ${{ inputs.image }} --raw > ${MANIFEST_FULL}
-        (
-          # Save manifest as output
-          echo "MANIFEST<<EOF"
-          cat ${MANIFEST}
-          echo EOF
-        ) >> ${GITHUB_OUTPUT}
-      env:
-        MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json
+        docker buildx imagetools inspect ${{ inputs.image }} --raw > ${MANIFEST}
 
-    - name: Generate copies for each layer
-      id: layers
-      shell: bash
-      run: |
-        layers=$(cat ${MANIFEST_FULL} | jq -r '.manifests[].digest | split(":")[1] ')
-        mkdir -vp "${{ inputs.output }}"
+        # Read list of layers
+        layers=$(cat ${MANIFEST} | jq -r '.manifests[].digest | split(":")[1] ')
+
+        # Generate one file per layer
+        files=
         for layer in ${layers}; do
-          manifest_file="${{ inputs.output }}/${layer}.json"
-          cp -v ${MANIFEST_FULL} "${manifest_file}"
+          manifest_file="${{ inputs.output }}/${{ inputs.output-prefix }}${layer}${{ inputs.output-suffix }}"
+          mkdir -vp "$(basename "${manifest_file}")"
+          if [ -z "${files}" ]; then
+            files="${manifest_file}"
+          else
+            files="${files}
+        ${manifest_file}"
+          fi
+          cp -v "${MANIFEST}" "${manifest_file}"
         done
+
         (
+          echo "MANIFEST<<EOF"
+          cat "${MANIFEST}"
+          echo EOF
+
           echo "LAYERS<<EOF"
           echo "${layers}"
           echo EOF
+
+          echo "FILES<<EOF"
+          echo "${files}"
+          echo EOF
         ) >> ${GITHUB_OUTPUT}
       env:
-        MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json
+        MANIFEST: ${{ github.action_path }}/manifest-summary.json
+

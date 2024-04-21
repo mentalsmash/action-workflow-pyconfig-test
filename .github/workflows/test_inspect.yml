@@ -27,3 +27,9 @@ jobs:
           ${{ steps.test.outputs.layers }}
           EOF
           echo ::endgroup::
+
+          echo ::group::Files
+          cat << EOF
+          ${{ steps.test.outputs.files }}
+          EOF
+          echo ::endgroup::
