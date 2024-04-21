@@ -49,8 +49,8 @@ runs:
 
         import sys
         repo_dir = Path("${{ github.action_path }}").parent.parent.parent
-
-        sys.path.insert(0, str(repo_dir))
+        src_dir = repo_dir / "src"
+        sys.path.insert(0, str(src_dir))
         from pyconfig import configuration
 
         workflow = "${{ inputs.workflow }}"
