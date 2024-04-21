@@ -65,6 +65,7 @@ runs:
 
         inputs = """${{ inputs.inputs }}"""
 
+        sys.path.insert(0, str(config_dir))
         _, _, cfg = configuration(
           clone_dir=clone_dir,
           config_dir=config_dir,
