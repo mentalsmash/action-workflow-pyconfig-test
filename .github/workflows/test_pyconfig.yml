@@ -37,10 +37,10 @@ jobs:
         id: config
         run: |
           (
-            echo FOO=$(jq .pyconfig.json '.foo')
-            echo BAR=$(jq .pyconfig.json '.bar')
-            echo CLONE_DIR=$(jq .pyconfig.json '.build.clone_dir')
-            echo A_FUNCTION_OUTPUT=$(jq .pyconfig.json '.A_FUNCTION_OUTPUT')
+            echo FOO=$(jq '.foo' .pyconfig.json )
+            echo BAR=$(jq '.bar' .pyconfig.json )
+            echo CLONE_DIR=$(jq '.build.clone_dir' .pyconfig.json )
+            echo A_FUNCTION_OUTPUT=$(jq'.A_FUNCTION_OUTPUT' .pyconfig.json )
           ) >> ${GITHUB_OUTPUT}
     
       - name: "Fail if CLONE_DIR wasn't set"
