@@ -52,7 +52,7 @@ runs:
         from pathlib import Path
 
         import sys
-        repo_dir = Path("${{ github.action_path }}").parent.parent
+        repo_dir = Path("${{ github.action_path }}").parent.parent.parent
         sys.path.insert(0, repo_dir)
         from pyconfig import configuration
 
