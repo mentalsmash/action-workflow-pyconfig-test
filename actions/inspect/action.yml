@@ -1,0 +1,89 @@
+name: Inspect Multi-Platform Image
+description: |
+  Inspect the manifest of a multi-platform image, and create a log of referenced images,
+  which can be used to delete the images even if the image is untagged.
+
+  The action should be pointed to a directory where the manifest written in JSON
+  format and in multiple copies.
+
+  Each copy will be named after the sha256 hash of one of the layers referenced by
+  the manifest. The copies can be used to look up the manifest by hash of any of its layers.
+
+inputs:
+  image:
+    description: The image to inspect
+    required: true
+  output:
+    description: Directory where to save the manifests.
+    required: false
+  output-prefix:
+    description: A prefix to be prepended before the hash in generated files.
+    required: false
+    default: ''
+  output-suffix:
+    description: The extension for the generated files.
+    required: false
+    default: '.json'
+  registry:
+    description: Image registry used for authentication.
+    required: false
+    default: ''
+  registry-token:
+    description: Token for authenticating on the registry.
+    required: false
+    default: ''
+  registry-user:
+    description: User for authenticating on the registry.
+    required: false
+    default: ''
+outputs:
+  manifest:
+    description: The manifest in JSON format.
+    value: ${{ steps.manifest.outputs.MANIFEST }}
+  layers:
+    description: New-line separeted list of hashes.
+    value: ${{ steps.layers.outputs.LAYERS }}
+  
+runs:
+  using: "composite"
+  steps:
+    - name: Log in to registry
+      uses: docker/login-action@v3
+      if: inputs.registry-token
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry-user }}
+        password: ${{ inputs.registry-token }}
+
+    - name: Retrieve image manifest
+      id: manifest
+      shell: bash
+      run: |
+        # Download JSON manifest
+        docker buildx imagetools inspect ${{ inputs.image }} --raw > ${MANIFEST_FULL}
+        (
+          # Save manifest as output
+          echo "MANIFEST<<EOF"
+          cat ${MANIFEST}
+          echo EOF
+        ) >> ${{$GITHUB_OUTPUT}}
+      env:
+        MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json
+
+    - name: Generate copies for each layer
+      id: layers
+      shell: bash
+      run: |
+        layers=$(cat ${MANIFEST_FULL} | jq -r '.manifests[].digest | split(":")[1] ')
+        mkdir -vp "${{ inputs.output }}"
+        for layer in ${layers}; do
+          manifest_file="${{ inputs.output }}/${layer}.json"
+          cp -v ${MANIFEST_FULL} "${manifest_file}"
+        done
+        (
+          echo "LAYERS<<EOF"
+          echo "${layers}"
+          echo EOF
+        ) >> ${$GITHUB_OUTPUT}
+      env:
+        MANIFEST_FULL: ${{ github.action_path }}/manifest-summary.json

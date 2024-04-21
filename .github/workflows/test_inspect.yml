@@ -1,0 +1,29 @@
+name: Test Inspect
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Action
+        id: test
+        uses: mentalsmash/action-workflow-pyconfig-test/actions/inspect@v1
+        with:
+          image: ghcr.io/mentalsmash/ref-project-debdocker-debian-builder:ubuntu-22.04
+          output: manifests
+
+      - name: Print Output
+        run: |
+          echo ::group::Manifest
+          cat << EOF
+          ${{ steps.test.outputs.manifest }}
+          EOF
+          echo ::endgroup::
+
+          echo ::group::Layers
+          cat << EOF
+          ${{ steps.test.outputs.layers }}
+          EOF
+          echo ::endgroup::
