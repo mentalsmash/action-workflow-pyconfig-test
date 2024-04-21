@@ -23,7 +23,7 @@ def configure(
     cfg: NamedTuple,
     github: NamedTuple,
     inputs: NamedTuple) -> dict:
-  assert "string" == inputs.string
+  assert "a string" == inputs.string
   assert inputs.boolean
   assert inputs.int == 42
   return {
