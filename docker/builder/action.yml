@@ -119,7 +119,8 @@ runs:
         tags: ${{ steps.metadata.outputs.tags }}
         annotations: ${{ steps.metadata.outputs.annotations }}
         labels: ${{ steps.metadata.outputs.labels }}
-        push: ${{ inputs.push }}
+        push: ${{ inputs.action == 'push' }}
+        load: ${{ inputs.action == 'load' }}
         context: ${{ inputs.context }}
         platforms: ${{ inputs.build-platforms }}
         build-args: |
