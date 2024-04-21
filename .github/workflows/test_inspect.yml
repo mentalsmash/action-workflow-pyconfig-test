@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Test Action
         id: test
-        uses: mentalsmash/action-workflow-pyconfig-test/actions/inspect@v1
+        uses: mentalsmash/action-workflow-pyconfig-test/actions/inspect@master
         with:
           image: ghcr.io/mentalsmash/ref-project-debdocker-debian-builder:ubuntu-22.04
           output: manifests
