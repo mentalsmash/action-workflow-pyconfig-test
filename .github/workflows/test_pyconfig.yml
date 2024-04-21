@@ -38,6 +38,27 @@ jobs:
         run: |
           echo ::group::PyConfig
           cat .pyconfig.json
+          echo
+          echo ::endgroup::
+          
+          echo ::group::FOO
+          cat .pyconfig.json | jq '.foo'
+          echo
+          echo ::endgroup::
+
+          echo ::group::BAR
+          cat .pyconfig.json | jq '.bar'
+          echo
+          echo ::endgroup::
+
+          echo ::group::CLONE_DIR
+          cat .pyconfig.json | jq '.build.clone_dir'
+          echo
+          echo ::endgroup::
+
+          echo ::group::A_FUNCTION_OUTPUT
+          cat .pyconfig.json | jq '.A_FUNCTION_OUTPUT'
+          echo
           echo ::endgroup::
           (
             echo FOO=$(cat .pyconfig.json | jq '.foo')
