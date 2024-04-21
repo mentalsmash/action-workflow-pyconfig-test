@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from .pyconfig import configure, configuration, summarize
+from .pyconfig import dynamic_output, configuration, summarize
 
 __all__ = [
-  "configure",
   "configuration",
+  "dynamic_output",
   "summarize",
 ]
