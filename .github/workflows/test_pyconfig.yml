@@ -1,0 +1,50 @@
+name: Test pyconfig
+
+on:
+  workflow_dispatch:
+
+env:
+  CLONE_DIR: src/repo
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
+      - name: Test Action
+        uses: mentalsmash/action-workflow-pyconfig-test/actions/pyconfig/configuration@master
+        with:
+          clone-dir: src/repo
+          workflow: test_pyconfig
+
+      - name: Export configuration settings
+        id: config
+        run: |
+          (
+            echo FOO=$(jq .pyconfig.json '.foo')
+            echo BAR=$(jq .pyconfig.json '.bar')
+            echo CLONE_DIR=$(jq .pyconfig.json '.build.clone_dir')
+            echo A_FUNCTION_OUTPUT=$(jq .pyconfig.json '.A_FUNCTION_OUTPUT')
+          ) >> ${GITHUB_OUTPUT}
+    
+      - name: "Fail if CLONE_DIR wasn't set"
+        if: ${{ steps.config.outputs.CLONE_DIR != 'src/repo' }}
+        run: |
+          exit 1
+      - name: "Fail if FOO wasn't set"
+        if: ${{ steps.config.outputs.FOO != 'foo' }}
+        run: |
+          exit 1
+      - name: "Fail if BAR wasn't set"
+        if: ${{ steps.config.outputs.BAR != 'foo.bar' }}
+        run: |
+          exit 1
+      - name: "Fail if A_FUCNTION_OUTPUT wasn't set"
+        if: ${{ steps.config.outputs.A_FUCNTION_OUTPUT != 'foo.bar.a_function' }}
+        run: |
+          exit 1
