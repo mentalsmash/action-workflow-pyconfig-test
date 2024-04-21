@@ -20,7 +20,7 @@ jobs:
         uses: mentalsmash/action-workflow-pyconfig-test/actions/pyconfig/configuration@master
         with:
           clone-dir: src/repo
-          workflow: test_pyconfig
+          workflow: test_action
 
       - name: Export configuration settings
         id: config
