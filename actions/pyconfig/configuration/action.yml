@@ -52,7 +52,8 @@ runs:
         from pathlib import Path
 
         import sys
-        sys.path.insert(0, "${{ github.action_path }}")
+        repo_dir = Path("${{ github.action_path }}").parent.parent.parent.parent
+        sys.path.insert(0, repo_dir)
         from pyconfig import configuration
 
         workflow = "${{ inputs.workflow }}"
