@@ -25,7 +25,7 @@ def configure(
     inputs: NamedTuple) -> dict:
   assert "a string" == inputs.string
   assert inputs.boolean
-  assert inputs.int == 42
+  assert int(inputs.int) == 42
   return {
     "A_FUNCTION_OUTPUT": a_function(cfg.dyn.bar),
   }
