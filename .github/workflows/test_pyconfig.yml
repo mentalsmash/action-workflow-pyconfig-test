@@ -44,7 +44,7 @@ jobs:
         if: ${{ steps.config.outputs.BAR != 'foo.bar' }}
         run: |
           exit 1
-      - name: "Fail if A_FUCNTION_OUTPUT wasn't set"
-        if: ${{ steps.config.outputs.A_FUCNTION_OUTPUT != 'foo.bar.a_function' }}
+      - name: "Fail if A_FUNCTION_OUTPUT wasn't set"
+        if: ${{ steps.config.outputs.A_FUNCTION_OUTPUT != 'foo.bar.a_function' }}
         run: |
           exit 1

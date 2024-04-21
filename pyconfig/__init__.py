@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from .pyconfig import configure, summarize
+from .pyconfig import configure, configuration, summarize
 
 __all__ = [
   "configure",
+  "configuration",
   "summarize",
 ]

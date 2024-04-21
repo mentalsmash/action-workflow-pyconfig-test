@@ -52,9 +52,8 @@ runs:
         from pathlib import Path
 
         import sys
-        sys.path.insert(0, "${{ inputs.clone-dir }}/${{ inputs.path }}")
-
-        from ${{ inputs.module }} import configuration
+        sys.path.insert(0, "${{ github.action_path }}")
+        from pyconfig import configuration
 
         workflow = "${{ inputs.workflow }}"
 
