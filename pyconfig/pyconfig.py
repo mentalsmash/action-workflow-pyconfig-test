@@ -282,8 +282,6 @@ def configuration(
   if workflow:
     workflow_mod_py = config_dir / "workflows" / f"{workflow}.py"
     workflow_mod = load_file_as_module(workflow_mod_py, workflow)
-
-    workflow_mod = importlib.import_module(f"workflows_pyconfig.workflows.{workflow}")
     workflow_cfg = workflow_mod.configure(
       clone_dir=clone_dir, cfg=project_cfg, github=github, inputs=inputs
     )
