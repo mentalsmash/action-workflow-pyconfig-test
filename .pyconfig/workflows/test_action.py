@@ -30,3 +30,15 @@ def configure(
     "A_FUNCTION_OUTPUT": a_function(cfg.bar),
   }
 
+
+def summarize(
+    clone_dir: Path,
+    cfg: NamedTuple,
+    github: NamedTuple,
+    inputs: NamedTuple) -> str:
+  
+  return """\
+# Dymamic Summary
+
+Hello from Python!
+"""

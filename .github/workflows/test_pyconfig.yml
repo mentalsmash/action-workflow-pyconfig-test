@@ -83,3 +83,10 @@ jobs:
         if: ${{ steps.config.outputs.A_FUNCTION_OUTPUT != 'foo.bar.a_function' }}
         run: |
           exit 1
+
+      - name: Test Action
+        uses: mentalsmash/action-workflow-pyconfig-test/actions/pyconfig/summary@master
+        with:
+          clone-dir: src/repo
+          workflow: test_action
+          inputs: ${{ toJson(inputs) }}

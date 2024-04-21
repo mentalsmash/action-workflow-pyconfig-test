@@ -1,10 +1,8 @@
-name: Python-based Workflow Configuration
+name: Python-based Workflow Summary
 description: |
-  This action allows you to load a static configuration, enhance it
-  using Python code.
-  
-  The configuration will exported in JSON object both as an
-  output (`settings`), and as the file specified by `inputs.output`.
+  This action allows you to generate a summary from Python
+  code. The summary function will receive the project's python-based
+  configuration as argument.
 
 inputs:
   clone-dir:
@@ -16,9 +14,8 @@ inputs:
     required: false
     default: .pyconfig
   workflow:
-    description: Run a configuration function for the specified workflow.
-    required: false
-    default: ''
+    description: Workflow to summarize
+    required: True
   github:
     description: The workflow's `github` context as a JSON string.
     required: false
@@ -27,10 +24,6 @@ inputs:
     description: The workflow's `inputs` context as a JSON string.
     required: false
     default: ''
-  output:
-    description: A JSON file with the final configuration.
-    required: false
-    default: .pyconfig.json
 outputs:
   settings:
     description: The loaded settings in JSON format.
@@ -51,7 +44,7 @@ runs:
         repo_dir = Path("${{ github.action_path }}").parent.parent.parent
 
         sys.path.insert(0, str(repo_dir))
-        from pyconfig import configuration
+        from pyconfig import summarize
 
         workflow = "${{ inputs.workflow }}"
 
@@ -66,20 +59,10 @@ runs:
         inputs = """${{ inputs.inputs }}"""
 
         sys.path.insert(0, str(config_dir))
-        _, _, cfg = configuration(
+
+        summarize(
+          workflow=workflow,
           clone_dir=clone_dir,
           config_dir=config_dir,
           github=github if github else None,
-          inputs=inputs if inputs else None,
-          workflow=workflow if workflow else None,
-          as_tuple=False)
-
-        cfg_json = json.dumps(cfg)
-
-        with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
-          output.write("SETTINGS<<EOF\n")
-          output.write(cfg_json)
-          output.write("\n")
-          output.write("EOF\n")
-
-        Path("${{ inputs.output }}").write_text(cfg_json)
+          inputs=inputs if inputs else None)

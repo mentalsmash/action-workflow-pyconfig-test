@@ -218,7 +218,7 @@ def configuration(
   inputs: str | None = None,
   as_tuple: bool = True,
   workflow: str | None = None
-) -> tuple[tuple, tuple, tuple | dict]:
+) -> tuple[tuple, tuple, tuple | dict, object | None]:
 
   def _json_load(val: str):
     # Make sure the string doesn't contain literal or escaped newline
@@ -293,61 +293,56 @@ def configuration(
     print("::group::Final Settings")
     print(yaml.safe_dump(cfg_dict))
     print("::endgroup::")
+  else:
+    workflow_mod = None
 
-  return github, inputs, (dict_to_tuple("settings", cfg_dict) if as_tuple else cfg_dict)
+  return github, inputs, (dict_to_tuple("settings", cfg_dict) if as_tuple else cfg_dict), workflow_mod
 
 
 ###############################################################################
 #
 ###############################################################################
-def configure(
+def dynamic_output(
   clone_dir: Path,
   config_dir: Path,
   github: str,
-  outputs: str | None = None,
+  outputs: str,
   inputs: str | None = None,
   workflow: str | None = None,
 ):
-  github, inputs, cfg_dict = configuration(clone_dir, config_dir, github, inputs, as_tuple=False)
+  github, inputs, cfg_dict, _ = configuration(clone_dir, config_dir, github, inputs, as_tuple=False, workflow=workflow)
   cfg = dict_to_tuple("settings", cfg_dict)
   action_outputs = {}
 
-  if outputs is not None:
-    for line in outputs.splitlines():
-      line = line.strip()
-      if not line:
-        continue
-      var, val_k = line.split("=")
-      var = var.strip()
-      val_k = val_k.strip()
-      ctx_name = val_k[: val_k.index(".")]
-      ctx_select = val_k[len(ctx_name) + 1 :]
-      ctx = {
-        "cfg": cfg,
-        "env": os.environ,
-        "github": github,
-        "inputs": inputs,
-      }[ctx_name]
-      action_outputs[var] = _select_attribute(ctx, ctx_select)
-
-  if workflow:
-    workflow_mod = importlib.import_module(f"workflows_pyconfig.workflows.{workflow}")
-    workflow_outputs = workflow_mod.configure(
-      clone_dir=clone_dir, cfg=cfg, github=github, inputs=inputs
-    )
-    action_outputs.update(workflow_outputs or {})
+  for line in outputs.splitlines():
+    line = line.strip()
+    if not line:
+      continue
+    var, val_k = line.split("=")
+    var = var.strip()
+    val_k = val_k.strip()
+    ctx_name = val_k[: val_k.index(".")]
+    ctx_select = val_k[len(ctx_name) + 1 :]
+    ctx = {
+      "cfg": cfg,
+      "env": os.environ,
+      "github": github,
+      "inputs": inputs,
+    }[ctx_name]
+    action_outputs[var] = _select_attribute(ctx, ctx_select)
 
   if action_outputs:
     write_output(action_outputs)
+  else:
+    print("WARNING no output generated")
 
 
 ###############################################################################
 #
 ###############################################################################
-def summarize(workflow: str, github: str, inputs: str | None = None):
-  github, inputs, cfg = configuration(github, inputs)
-  workflow_mod = importlib.import_module(f"workflows_pyconfig.workflows.{workflow}")
-  summary = workflow_mod.summarize(clone_dir=CloneDir, github=github, inputs=inputs, cfg=cfg)
+def summarize(clone_dir: Path, config_dir: Path, workflow: str, github: str, inputs: str | None = None):
+  github, inputs, cfg, workflow_mod = configuration(clone_dir, config_dir, github, inputs, workflow=workflow)
+  summary = workflow_mod.summarize(clone_dir=clone_dir, github=github, inputs=inputs, cfg=cfg)
   with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
     output.write(summary)
     output.write("\n")
