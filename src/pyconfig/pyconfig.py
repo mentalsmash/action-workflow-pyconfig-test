@@ -20,8 +20,6 @@ import subprocess
 from pathlib import Path
 from collections import namedtuple
 from typing import NamedTuple
-import importlib
-
 
 ###############################################################################
 #

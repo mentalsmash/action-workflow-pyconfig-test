@@ -13,10 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from .pyconfig import dynamic_output, configuration, summarize
+from .pyconfig import (
+  dynamic_output,
+  configuration,
+  summarize,
+  dict_to_tuple,
+  tuple_to_dict,
+  merge_dicts,
+  sha_short,
+  extract_registries, 
+)
 
 __all__ = [
   "configuration",
   "dynamic_output",
   "summarize",
+  "dict_to_tuple",
+  "tuple_to_dict",
+  "merge_dicts",
+  "sha_short",
+  "extract_registries",
 ]
