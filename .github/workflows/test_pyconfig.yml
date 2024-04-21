@@ -2,6 +2,16 @@ name: Test pyconfig
 
 on:
   workflow_dispatch:
+    inputs:
+      string:
+        type: string
+        default: a string
+      boolean:
+        type: boolean
+        default: true
+      int:
+        type: number
+        default: 42
 
 env:
   CLONE_DIR: src/repo
