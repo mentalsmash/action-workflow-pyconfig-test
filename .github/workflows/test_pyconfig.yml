@@ -42,7 +42,7 @@ jobs:
           echo ::endgroup::
           
           echo ::group::FOO
-          -jr .pyconfig.jsonjq '.foo' -jr .pyconfig.json
+          jq '.foo' -jr .pyconfig.json
           echo
           echo ::endgroup::
 
