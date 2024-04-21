@@ -7,14 +7,10 @@ inputs:
     description: Directory where to clone the repository
     required: false
     default: src/repo
-  module:
-    description: Python configuration module.
+  path:
+    description: Local path where the configuration is located.
     required: false
     default: .pyconfig
-  path:
-    description: Local path where the configuration module is located.
-    required: false
-    default: .github
   settings:
     description: Static configuration files to load from the configuration directory.
     required: false

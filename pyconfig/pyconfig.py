@@ -257,11 +257,11 @@ def configuration(
   if cfg_mod_py.exists():
     cfg_mod = load_file_as_module(cfg_mod_py)
     derived_cfg = cfg_mod.settings(clone_dir=clone_dir, cfg=dict_to_tuple("settings", cfg_dict), github=github)
+    print("::group::Dynamic Settings")
+    print(yaml.safe_dump(derived_cfg))
+    print("::endgroup::")
   else:
     derived_cfg = {}
-  print("::group::Dynamic Settings")
-  print(yaml.safe_dump(derived_cfg))
-  print("::endgroup::")
 
   cfg_dict = merge_dicts(derived_cfg, cfg_dict)
   cfg_dict = merge_dicts(
