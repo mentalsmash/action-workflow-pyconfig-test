@@ -71,7 +71,7 @@ runs:
         files=
         for layer in ${layers}; do
           manifest_file="${{ inputs.output }}/${{ inputs.output-prefix }}${layer}${{ inputs.output-suffix }}"
-          mkdir -vp "$(basename "${manifest_file}")"
+          mkdir -vp "$(dirname "${manifest_file}")"
           if [ -z "${files}" ]; then
             files="${manifest_file}"
           else
