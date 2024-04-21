@@ -16,11 +16,14 @@ inputs:
     description: Build context
     required: false
     default: .
+  image-tags:
+    description: image tags
+    default: ''
   image-tags-config:
-    description: image tag configurations
+    description: image tag configurations for `docker/metadata-action`
     default: latest
   image-flavor-config:
-    description: image flavor configurations
+    description: image flavor configurations for `docker/metadata-action`
     default: ''
   github-token:
     description: GitHub login token
@@ -39,7 +42,7 @@ inputs:
     default: load
   build-platforms:
     description: Docker build platforms expression (,)
-    default: linux/amd64,linux/arm64
+    default: ''
   build-args:
     description: Extra build arguments
 
@@ -67,19 +70,21 @@ runs:
         username: ${{ inputs.dockerhub-user }}
         password: ${{ inputs.dockerhub-token }}
 
+    - name: Generate base image tag
+      id: base-image-tag
+      shell: bash
+      run: |
+        # Automatically derive tag from base image if no config provided
+        echo IMAGE_TAGS=$(echo "${{ inputs.base-image}}" | tr / - | tr : -) >> ${GITHUB_OUTPUT}
+
     - name: Generate image tags
       id: image-tags
       shell: bash
       run: |
         (
-          if [ -z "${{ inputs.image-tags-config}}" ]; then
-            # Automatically derive tag from base image if no config provided
-            echo IMAGE_TAGS=$(echo "${{ inputs.base-image}}" | tr / - | tr : -)
-          else
-            echo "IMAGE_TAGS<<EOF"
-            echo "${{ inputs.image-tags-config }}"
-            echo EOF
-          fi
+          echo "IMAGE_TAGS<<EOF"
+          echo "${{ inputs.image-tags-config }}"
+          echo EOF
         ) >> ${GITHUB_OUTPUT}
 
     - name: Generate image repos
@@ -104,6 +109,7 @@ runs:
 
     - name: Extract image metadata
       id: metadata
+      if: ${{ inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config }}
       uses: docker/metadata-action@v5
       with:
         images: ${{ steps.image-repos.outputs.IMAGE_REPOS }}
@@ -116,9 +122,9 @@ runs:
       uses: docker/build-push-action@v5
       with:
         file: ${{ inputs.dockerfile }}
-        tags: ${{ steps.metadata.outputs.tags }}
-        annotations: ${{ steps.metadata.outputs.annotations }}
-        labels: ${{ steps.metadata.outputs.labels }}
+        tags: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.tags) || (inputs.image-tags || steps.base-image-tag.outputs.IMAGE_TAGS) }}
+        annotations: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.annotations) || '' }}
+        labels: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.labels) || ''}}
         push: ${{ inputs.action == 'push' }}
         load: ${{ inputs.action == 'load' }}
         context: ${{ inputs.context }}
