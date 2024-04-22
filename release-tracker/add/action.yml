@@ -58,7 +58,9 @@ runs:
           track="${{ inputs.track }}",
           version="${{ inputs.version }}",
           created_at="${{ inputs.created-at }}",
-          files="${{ inputs.files }}")
+          files=""
+            "${{ inputs.files }}
+          """)
 
         import yaml      
         print("::group::New Release")
