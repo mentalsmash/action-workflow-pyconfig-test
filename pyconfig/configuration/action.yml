@@ -30,7 +30,7 @@ inputs:
   output:
     description: A JSON file with the final configuration.
     required: false
-    default: .pyconfig.json
+    default: pyconfig.json
 outputs:
   settings:
     description: The loaded settings in JSON format.

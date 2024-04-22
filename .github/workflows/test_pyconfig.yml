@@ -37,34 +37,34 @@ jobs:
         id: config
         run: |
           echo ::group::PyConfig
-          cat .pyconfig.json
+          cat pyconfig.json
           echo
           echo ::endgroup::
           
           echo ::group::FOO
-          jq '.foo' -jr .pyconfig.json
+          jq '.foo' -r pyconfig.json
           echo
           echo ::endgroup::
 
           echo ::group::BAR
-          jq '.bar' -jr .pyconfig.json
+          jq '.bar' -r pyconfig.json
           echo
           echo ::endgroup::
 
           echo ::group::CLONE_DIR
-          jq '.build.clone_dir' -jr .pyconfig.json
+          jq '.build.clone_dir' -r pyconfig.json
           echo
           echo ::endgroup::
 
           echo ::group::A_FUNCTION_OUTPUT
-          jq '.A_FUNCTION_OUTPUT' -jr .pyconfig.json
+          jq '.A_FUNCTION_OUTPUT' -r pyconfig.json
           echo
           echo ::endgroup::
           (
-            echo FOO=$(jq '.foo' -jr .pyconfig.json)
-            echo BAR=$(jq '.bar' -jr .pyconfig.json)
-            echo CLONE_DIR=$(jq '.build.clone_dir' -jr .pyconfig.json)
-            echo A_FUNCTION_OUTPUT=$(jq '.A_FUNCTION_OUTPUT' -jr .pyconfig.json)
+            echo FOO=$(jq '.foo' -r pyconfig.json)
+            echo BAR=$(jq '.bar' -r pyconfig.json)
+            echo CLONE_DIR=$(jq '.build.clone_dir' -r pyconfig.json)
+            echo A_FUNCTION_OUTPUT=$(jq '.A_FUNCTION_OUTPUT' -r pyconfig.json)
           ) >> ${GITHUB_OUTPUT}
     
       - name: "Fail if CLONE_DIR wasn't set"
