@@ -8,13 +8,12 @@ inputs:
     required: true
   image-repos:
     description: image repositories
-    required: true
+    default: ''
   base-image:
     description: Base image (repo:tag)
     required: true
   context:
     description: Build context
-    required: false
     default: .
   image-tags:
     description: image tags
@@ -27,16 +26,12 @@ inputs:
     default: ''
   github-token:
     description: GitHub login token
-    required: false
   github-user:
     description: GitHub user
-    required: false
   dockerhub-token:
     description: DockerHub login token
-    required: false
   dockerhub-user:
     description: DockerHub user
-    required: false
   action:
     description: push or load
     default: load
