@@ -31,7 +31,8 @@ runs:
       shell: python
       run: |
         import sys
-        sys.path.insert(0, "${{ github.action_path }}/src")
+        src_dir = Path("${{ github.action_path }}").parent.parent / "src"
+        sys.path.insert(0, str(src_dir))
         from release_tracker import find
         matches = find(
           tracks_dir="${{ inputs.tracks-dir }}",

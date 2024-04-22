@@ -49,8 +49,7 @@ runs:
         from pathlib import Path
 
         import sys
-        repo_dir = Path("${{ github.action_path }}").parent.parent
-        src_dir = repo_dir / "src"
+        src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
         from pyconfig import configuration
 

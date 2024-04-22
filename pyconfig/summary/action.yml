@@ -41,23 +41,17 @@ runs:
         from pathlib import Path
 
         import sys
-        repo_dir = Path("${{ github.action_path }}").parent.parent
-        src_dir = repo_dir / "src"
+        src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
         from pyconfig import summarize
 
         workflow = "${{ inputs.workflow }}"
-
         clone_dir = Path("${{ inputs.clone-dir }}")
-
         config_dir = clone_dir / "${{ inputs.path }}"
-
         github = """${{ inputs.github }}"""
         if not github:
           github = """${{ toJson(github) }}"""
-
         inputs = """${{ inputs.inputs }}"""
-
         sys.path.insert(0, str(config_dir))
 
         summarize(
