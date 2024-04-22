@@ -280,9 +280,12 @@ def configuration(
   if workflow:
     workflow_mod_py = config_dir / "workflows" / f"{workflow}.py"
     workflow_mod = load_file_as_module(workflow_mod_py, workflow)
-    workflow_cfg = workflow_mod.configure(
-      clone_dir=clone_dir, cfg=project_cfg, github=github, inputs=inputs
-    )
+    if hasattr(workflow_mod, "configure"):
+      workflow_cfg = workflow_mod.configure(
+        clone_dir=clone_dir, cfg=project_cfg, github=github, inputs=inputs
+      )
+    else:
+      workflow_cfg = {}
     print(f"::group::Workflow {workflow} Settings")
     print(yaml.safe_dump(workflow_cfg))
     print("::endgroup::")
