@@ -60,7 +60,7 @@ runs:
 
     - name: Log in to DockerHub
       uses: docker/login-action@v3
-      if: inputs.login-dockerhub == 'yes'
+      if: inputs.dockerhub-token
       with:
         username: ${{ inputs.dockerhub-user }}
         password: ${{ inputs.dockerhub-token }}
