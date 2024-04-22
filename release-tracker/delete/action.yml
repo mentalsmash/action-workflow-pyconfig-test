@@ -26,6 +26,7 @@ runs:
       shell: python
       run: |
         import sys
+        from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
         from release_tracker import delete

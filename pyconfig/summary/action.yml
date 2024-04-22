@@ -36,11 +36,11 @@ runs:
       id: settings
       shell: python
       run: |
-        import os
         import json
+        import os
+        import sys
         from pathlib import Path
 
-        import sys
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
         from pyconfig import summarize
