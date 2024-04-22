@@ -75,7 +75,7 @@ runs:
       shell: bash
       run: |
         # Automatically derive tag from base image if no config provided
-        echo IMAGE_TAGS=$(echo "${{ inputs.base-image}}" | tr / - | tr : -) >> ${GITHUB_OUTPUT}
+        echo IMAGE_TAG=$(echo "${{ inputs.base-image}}" | tr / - | tr : -) >> ${GITHUB_OUTPUT}
 
     - name: Generate image tags
       id: image-tags
@@ -109,7 +109,7 @@ runs:
 
     - name: Extract image metadata
       id: metadata
-      if: ${{ inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config }}
+      if: ${{ inputs.action == 'push' }}
       uses: docker/metadata-action@v5
       with:
         images: ${{ steps.image-repos.outputs.IMAGE_REPOS }}
@@ -120,13 +120,26 @@ runs:
 
     - name: Build and push image
       uses: docker/build-push-action@v5
+      if: ${{ inputs.action == 'push' }}
       with:
         file: ${{ inputs.dockerfile }}
-        tags: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.tags) || (inputs.image-tags || steps.base-image-tag.outputs.IMAGE_TAGS) }}
-        annotations: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.annotations) || '' }}
-        labels: ${{ ((inputs.image-repos || inputs.image-tags-config || inputs.image-flavor-config) && steps.metadata.outputs.labels) || ''}}
-        push: ${{ inputs.action == 'push' }}
-        load: ${{ inputs.action == 'load' }}
+        tags: ${{ steps.metadata.outputs.tags }}
+        annotations: ${{ steps.metadata.outputs.annotations }}
+        labels: ${{ steps.metadata.outputs.labels }}
+        push: true
+        context: ${{ inputs.context }}
+        platforms: ${{ inputs.build-platforms }}
+        build-args: |
+          BASE_IMAGE=${{ inputs.base-image }}
+          ${{ inputs.build-args || '' }}
+
+    - name: Build and load image
+      uses: docker/build-push-action@v5
+      if: ${{ inputs.action == 'load' }}
+      with:
+        file: ${{ inputs.dockerfile }}
+        tags: ${{ inputs.image-tags || steps.base-image-tag.outputs.IMAGE_TAG }}
+        load: true
         context: ${{ inputs.context }}
         platforms: ${{ inputs.build-platforms }}
         build-args: |
