@@ -35,5 +35,5 @@ def initialize(tracks: str, tracks_dir: str) -> None:
     track_dir.mkdir(exist_ok=True)
 
     track_log = track_dir / "release-log.json"
-    track_log.write_text(json.safe_dump([]))
+    track_log.write_text(json.dumps([]))
 
