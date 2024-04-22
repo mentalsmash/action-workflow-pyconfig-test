@@ -31,10 +31,11 @@ inputs:
     description: A JSON file with the final configuration.
     required: false
     default: pyconfig.json
-outputs:
-  settings:
-    description: The loaded settings in JSON format.
-    value: ${{ steps.settings.outputs.SETTINGS }}
+
+# outputs:
+#   settings:
+#     description: The loaded settings in JSON format.
+#     value: ${{ steps.settings.outputs.SETTINGS }}
   
 runs:
   using: "composite"
