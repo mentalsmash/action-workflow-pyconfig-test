@@ -61,6 +61,4 @@ runs:
           images="""
             ${{ inputs.images }}
           """,
-          output="${{ inputs.output }}",
-          output_prefix="${{ inputs.output-prefix }}",
-          output_suffix="${{ inputs.output-suffix }}")
+          output="${{ inputs.output }}")
