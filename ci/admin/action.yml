@@ -25,9 +25,11 @@ runs:
         from pathlib import Path
         action_dir = Path("${{ github.action_path }}")
         repo_dir = action_dir.parent.parent.parent
-        print("REPO_DIR", repo_dir)
         src_dir = repo_dir / "src"
+        print("SRC_DIR", src_dir)
         sys.path.insert(0, str(src_dir))
+        if not (src_dir / "ci").exists():
+          raise RuntimeError("wtf")
         from ci.admin import Admin
         print("::add-mask::${{ inputs.token }}")
         print("::group::ci-admin output")
