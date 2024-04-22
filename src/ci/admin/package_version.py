@@ -111,8 +111,8 @@ class PackageVersion(NamedTuple):
       if repository:
         filter = f"'{repository} {filter}"
       packages = Package.select(org=org, filter=filter, package_type=package_type, noninteractive=True)
-      package = next((pkg for pkg in packages if pkg.name == package), None)
-      if package is None:
+      package_o = next((pkg for pkg in packages if pkg.name == package), None)
+      if package_o is None:
         package_label = package if not org else f"{org}/{package}"
         log.warning("[{}] skipping version delete because package doesn't exist", package_label)
         return []
