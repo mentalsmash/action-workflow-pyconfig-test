@@ -27,6 +27,7 @@ runs:
         repo_dir = action_dir.parent.parent.parent
         src_dir = repo_dir / "src"
         print("SRC_DIR", src_dir)
+        print("SRC_DIR files", list(src_dir.glob("*")))
         sys.path.insert(0, str(src_dir))
         if not (src_dir / "ci").exists():
           raise RuntimeError("wtf")
