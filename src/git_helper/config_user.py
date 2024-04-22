@@ -13,8 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-from .release_tracker import ReleaseTracker
+import subprocess
+from pathlib import Path
 
-__all__ = [
-  "ReleaseTracker",
-]
+def config_user(clone_dir: Path, user: tuple[str, str], config_global: bool=False) -> None:
+  user_name, user_email = user
+  subprocess.run([
+    "git", "config", *(["--global"] if config_global else []), "user.name", user_name
+  ], check=True, cwd=clone_dir)
+  subprocess.run([
+    "git", "config", *(["--global"] if config_global else []), "user.email", user_email
+  ], check=True, cwd=clone_dir)
+

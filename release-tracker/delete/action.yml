@@ -3,8 +3,14 @@ description: |
   Remove an entry from the release tracking directory.
 
 inputs:
-  tracks-dir:
-    description: The release tracking directory
+  repository:
+    description: The release tracking repository
+    required: true
+  path:
+    description: The directory where the repository was cloned
+    default: src/tracker
+  storage-prefix:
+    description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
     description: The track for the new release
@@ -18,6 +24,12 @@ inputs:
     description: |
       Match versions using a regular expression over the string "{created_at}__{version}".
       This feature is experimental, and you may run into "quote hell".
+  commit:
+    description: Commit changes to the local repository. Set to empty to disable.
+    default: yes
+  push:
+    description: Push new commit to remote repository. Set to empty to disable.
+    default: yes
 
 runs:
   using: "composite"
@@ -29,10 +41,23 @@ runs:
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
-        from release_tracker import delete
-        delete(
-          tracks_dir="${{ inputs.tracks-dir }}",
+
+        from release_tracker import ReleaseTracker
+
+        tracker = ReleaseTracker(
+          repository="${{ inputs.repository }}",
+          path="${{ inputs.path }}",
+          storage_prefix="${{ inputs.storage-prefix }}")
+
+        deleted = tracker.delete(
           track="${{ inputs.track }}",
           version="${{ inputs.version }}",
           created_at="${{ inputs.created-at }}",
-          match_re="""${{ inputs.match-re }}""")
+          match_re="""${{ inputs.match-re }}""",
+          commit=bool("${{ inputs.commit }}"),
+          push=bool("${{ inputs.push }}"))
+        
+        # Add release log entry
+        print("::group::Deleted Entries")
+        print(yaml.safe_dump(deleted))
+        print("::endgroup::")

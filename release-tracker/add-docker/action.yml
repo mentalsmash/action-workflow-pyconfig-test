@@ -1,11 +1,17 @@
-name: Add and commit a new entry for a docker release
+name: Add a new entry for a docker release
 description: |
   Convenience action to clone the release tracking repository,
   and add an entry for the release of one or more Docker images.
 
 inputs:
-  tracks-dir:
-    description: The release tracking directory
+  repository:
+    description: The release tracking repository
+    required: true
+  path:
+    description: The directory where the repository was cloned
+    default: src/tracker
+  storage-prefix:
+    description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
     description: The track for the new release
@@ -18,21 +24,12 @@ inputs:
   images:
     description: A newline-separated list of images included in the release.
     required: true
-  repository:
-    description: The release tracking repository
-    required: true
-  repository-user-name:
-    description: The name of the commit user
-    required: true
-  repository-user-email:
-    description: The email for the commit user
-    required: true
-  repository-token:
-    description: The authentication token for the commit user
-    required: true
-  repository-dir:
-    description: The directory where to clone the repository
-    default: src/tracker
+  commit:
+    description: Commit changes to the local repository. Set to empty to disable.
+    default: yes
+  push:
+    description: Push new commit to remote repository. Set to empty to disable.
+    default: yes
 
 outputs:
   entry:
@@ -48,6 +45,7 @@ runs:
     - name: Clone tracking repository
       uses: actions/checkout@v4
       with:
+        repository: ${{ inputs.repository }}
         path: ${{ inputs.repository-dir }}
         token: ${{ inputs.repository-token }}
 
@@ -60,17 +58,12 @@ runs:
     - name: Add entry to release tracker
       uses: mentalsmash/actions/release-tracker/add@master
       with:
-        tracks-dir: ${{ inputs.tracks-dir }}
+        repository: ${{ inputs.repository }}
+        path: ${{ inputs.path }}
+        storage-prefix: ${{ inputs.storage_prefix }}
         track: ${{ inputs.track }}
         version: ${{ inputs.version }}
         files: |
           images.json
-
-    - name: Commit and push changes
-      shell: bash
-      run: |
-        cd ${{ inputs.repository-dir }}
-        git config --global user.name '${{ inputs.repository-user-name }}'
-        git config --global user.email '${{ inputs.repository-user-email }}'
-        git commit -a -m "New ${{ inputs.track }} version: ${{ inputs.version }}"
-        git push
+        commit: ${{ inputs.commit }}
+        push: ${{ inputs.push }}

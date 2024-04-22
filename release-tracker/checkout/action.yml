@@ -1,0 +1,51 @@
+name: Clone the release tracking repository
+description: |
+  Clone the releae tracking repository
+
+inputs:
+  repository:
+    description: The release tracking repository
+    required: true
+  path:
+    description: The directory where to clone the repository
+    default: src/tracker
+  storage-prefix:
+    description: Subdirectory within the repository where to store tracking files.
+    default: releases
+  user-name:
+    description: The name of the commit user
+  user-email:
+    description: The email for the commit user
+  token:
+    description: The authentication token to access the repository
+  ref:
+    description: Branch of the repository to check out. `github.ref_name` if unspecified.
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clone tracking repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.repository }}
+        path: ${{ inputs.path }}
+        token: ${{ inputs.token }}
+        ref: ${{ inputs.ref || github.ref_name }}
+
+    - name: Initialize release tracker clone
+      shell: python
+      run: |
+        import sys
+        from pathlib import Path
+        src_dir = Path("${{ github.action_path }}").parent.parent / "src"
+        sys.path.insert(0, str(src_dir))
+
+        from release_tracker import ReleaseTracker
+
+        tracker = ReleaseTracker(
+          repository="${{ inputs.repository }}",
+          path="${{ inputs.path }}",
+          storage_prefix="${{ inputs.storage-prefix }}")
+
+        tracker.configure_clone(
+          user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),)

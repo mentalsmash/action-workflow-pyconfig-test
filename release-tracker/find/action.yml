@@ -3,8 +3,14 @@ description: |
   Find entries in the release tracking directory matching a query.
 
 inputs:
-  tracks-dir:
-    description: The release tracking directory
+  repository:
+    description: The release tracking repository
+    required: true
+  path:
+    description: The directory where the repository was cloned
+    default: src/tracker
+  storage-prefix:
+    description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
     description: The track for the new release
@@ -34,9 +40,16 @@ runs:
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
-        from release_tracker import find
-        matches = find(
-          tracks_dir="${{ inputs.tracks-dir }}",
+        
+        from release_tracker import ReleaseTracker
+
+        tracker = ReleaseTracker(
+          repository="${{ inputs.repository }}",
+          path="${{ inputs.path }}",
+          user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),
+          storage_prefix="${{ inputs.storage-prefix }}")
+
+        matches = tracker.find(
           track="${{ inputs.track }}",
           version="${{ inputs.version }}",
           created_at="${{ inputs.created-at }}",

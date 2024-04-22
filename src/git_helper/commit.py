@@ -13,27 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
-import yaml
-import json
+import subprocess
 from pathlib import Path
 
-
-def initialize(tracks: str, tracks_dir: str) -> None:
-  # Load release tracks configuration
-  tracks_cfg = yaml.safe_load(tracks.strip())
-
-  # Create base directory and write tracks.yml
-  tracks_dir = Path(tracks_dir.strip())
-  tracks_dir.mkdir(exist_ok=True, parents=True)
-
-  tracks_yml = tracks_dir / "tracks.yml"
-  tracks_yml.write_text(yaml.safe_dump(tracks_cfg))
-
-  # Initialize track directories
-  for track in tracks_cfg["tracks"]:
-    track_dir = tracks_dir / track["name"]
-    track_dir.mkdir(exist_ok=True)
-
-    track_log = track_dir / "release-log.json"
-    track_log.write_text(json.dumps([]))
-
+def commit(clone_dir: Path, message: str, user: tuple[str, str] | None = None, untracked: list[Path] | None = None, push: bool=True) -> None:
+  if user:
+    user_name, user_email = user
+    subprocess.run([
+      "git", "config", "--global", "user.name", user_name
+    ], check=True, cwd=clone_dir)
+    subprocess.run([
+      "git", "config", "--global", "user.email", user_email
+    ], check=True, cwd=clone_dir)
+  for file in untracked:
+    subprocess.run([
+      "git", "add", file
+    ], check=True, cwd=clone_dir)
+  subprocess.run([
+    "git", "commit", "-am", message,
+  ], check=True, cwd=clone_dir)
+  if push:
+    subprocess.run([
+      "git", "push",
+    ], check=True, cwd=clone_dir)
