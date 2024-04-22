@@ -11,25 +11,26 @@ jobs:
         id: test
         uses: mentalsmash/actions/docker/inspect@master
         with:
-          image: ghcr.io/mentalsmash/ref-project-debdocker-debian-builder:ubuntu-22.04
-          output: manifests
+          images: |
+            ghcr.io/mentalsmash/ref-project-debdocker-debian-builder:ubuntu-22.04
+          output: manifest.json
 
-      - name: Print Output
-        run: |
-          echo ::group::Manifest
-          cat << EOF
-          ${{ steps.test.outputs.manifest }}
-          EOF
-          echo ::endgroup::
+      # - name: Print Output
+      #   run: |
+      #     echo ::group::Manifest
+      #     cat << EOF
+      #     ${{ steps.test.outputs.manifest }}
+      #     EOF
+      #     echo ::endgroup::
 
-          echo ::group::Layers
-          cat << EOF
-          ${{ steps.test.outputs.layers }}
-          EOF
-          echo ::endgroup::
+      #     echo ::group::Layers
+      #     cat << EOF
+      #     ${{ steps.test.outputs.layers }}
+      #     EOF
+      #     echo ::endgroup::
 
-          echo ::group::Files
-          cat << EOF
-          ${{ steps.test.outputs.files }}
-          EOF
-          echo ::endgroup::
+      #     echo ::group::Files
+      #     cat << EOF
+      #     ${{ steps.test.outputs.files }}
+      #     EOF
+      #     echo ::endgroup::

@@ -1,0 +1,76 @@
+name: Add a new entry to the release tracking directory
+description: |
+  Add an entry to the release tracking directory for a new project release.
+
+  The action will add a new entry to the release track's log, and save
+  all provided files into a subdirectory named after the release
+  and the release timestamp.
+
+  The log file has the following syntax:
+
+  ```json
+  [
+    {
+      "version": "<version>"
+      "created_at": "%Y-%m-%dT%H:%M:%SZ",
+      ]
+    }
+  ]
+  ```
+
+inputs:
+  tracks-dir:
+    description: The release tracking directory
+    default: releases
+  track:
+    description: The track for the new release
+    required: true
+  version:
+    description: A unique version id for the new release
+    required: true
+  created_at:
+    description: A timestamp for the new releases. Automatically assigned if unspecified.
+  files:
+    description: A newline-separated list of files to copy in to the log directory.
+
+outputs:
+  entry:
+    description: Id of the generated entry
+    value: ${{ steps.add.outputs.ENTRY }}
+  created_at:
+    description: The timestamp for the new entry
+    value: ${{ steps.add.outputs.CREATED_AT }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create release log entry
+      shell: python
+      id: add
+      run: |
+        import sys
+        sys.path.insert(0, "${{ github.action_path }}/src")
+        from release_tracker import add
+        entry = add(
+          tracks_dir="${{ inputs.tracks-dir }}",
+          track="${{ inputs.track }}",
+          version="${{ inputs.version }}",
+          created_at="${{ inputs.created-at }}",
+          files="${{ inputs.files }}")
+
+        import yaml      
+        print("::group::New Release")
+        print(yaml.safe_dump(entry))
+        print("::endgroup::")
+      
+        import os
+        from pathlib import Path
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+          output.write("ENTRY=")
+          output.write(f"{entry['created_at']}__{entry['version']}")
+          output.write("\n")
+
+          output.write("CREATED_ENTRY=")
+          output.write(entry["created_at"])
+          output.write("\n")
+

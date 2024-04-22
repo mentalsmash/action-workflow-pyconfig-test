@@ -1,0 +1,79 @@
+name: Initialize a directory for release tracking
+description: |
+  This action will initialize a directory with the files and subdirectories required
+  to track releases of a project.
+
+  The following subtree will be created under `tracks-dir`:
+
+  ```
+  <tracks-dir>/
+  ├── nightly
+  │   └── release-log.json
+  ├── stable
+  │   └── release-log.json
+  └── tracks.yml
+  ```
+
+  The subdirectories are controlled by `tracks.yml` (passed via the `tracks` argument),
+  which is a file defining "release tracks" for the project.
+
+  Each "release track" directory will be initialized with an empty log file.
+
+  The file will be populated with a new entry every time a new version is
+  released to that track.
+
+inputs:
+  tracks-dir:
+    description: Path where to track project releases.
+    default: releases
+  tracks:
+    description: Release tracks configuration
+    default: |
+      tracks:
+        - name: nightly
+        - name: stable
+  repository:
+    description: The release tracking repository
+    required: true
+  repository-user-name:
+    description: The name of the commit user
+    required: true
+  repository-user-email:
+    description: The email for the commit user
+    required: true
+  repository-token:
+    description: The authentication token for the commit user
+    required: true
+  repository-dir:
+    description: The directory where to clone the repository
+    default: src/tracker
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clone tracking repository
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.repository-dir }}
+        token: ${{ inputs.repository-token }}
+
+    - name: Initialize release tracks storage
+      shell: python
+      run: |
+        import sys
+        sys.path.insert(0, "${{ github.action_path }}/src")
+        from release_tracker import initialize
+        initialize(
+          tracks_dir="${{ inputs.tracks-dir }}",
+          tracks="""
+            ${{ inputs.tracks }}
+          """)
+    
+    - name: Commit and push changes
+      run: |
+        cd ${{ inputs.repository-dir }}
+        git config --global user.name '${{ inputs.repository-user-name }}'
+        git config --global user.email '${{ inputs.repository-user-email }}'
+        git commit -a -m "Initialize release tracker"
+        git push
+

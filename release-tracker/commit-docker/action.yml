@@ -1,0 +1,76 @@
+name: Add and commit a new entry for a docker release
+description: |
+  Convenience action to clone the release tracking repository,
+  and add an entry for the release of one or more Docker images.
+
+inputs:
+  tracks-dir:
+    description: The release tracking directory
+    default: releases
+  track:
+    description: The track for the new release
+    required: true
+  version:
+    description: A unique version id for the new release
+    required: true
+  created_at:
+    description: A timestamp for the new releases. Automatically assigned if unspecified.
+  images:
+    description: A newline-separated list of images included in the release.
+    required: true
+  repository:
+    description: The release tracking repository
+    required: true
+  repository-user-name:
+    description: The name of the commit user
+    required: true
+  repository-user-email:
+    description: The email for the commit user
+    required: true
+  repository-token:
+    description: The authentication token for the commit user
+    required: true
+  repository-dir:
+    description: The directory where to clone the repository
+    default: src/tracker
+
+outputs:
+  entry:
+    description: Id of the generated entry
+    value: ${{ steps.add.outputs.ENTRY }}
+  created_at:
+    description: The timestamp for the new entry
+    value: ${{ steps.add.outputs.CREATED_AT }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Clone tracking repository
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.repository-dir }}
+        token: ${{ inputs.repository-token }}
+
+    - name: Dump image manifest
+      uses: mentalsmash/actions/docker/inspect@master
+      with:
+        images: ${{ inputs.images }}
+        output: ${{ github.action_path }}/images.json
+
+    - name: Add entry to release tracker
+      uses: mentalsmash/actions/release-tracker/add@master
+      with:
+        tracks-dir: ${{ inputs.tracks-dir }}
+        track: ${{ inputs.track }}
+        version: ${{ inputs.version }}
+        files: |
+          images.json
+
+    - name: Commit and push changes
+      shell: bash
+      run: |
+        cd ${{ inputs.repository-dir }}
+        git config --global user.name '${{ inputs.repository-user-name }}'
+        git config --global user.email '${{ inputs.repository-user-email }}'
+        git commit -a -m "New ${{ inputs.track }} version: ${{ inputs.version }}"
+        git push

@@ -1,0 +1,50 @@
+name: Find entries in the release tracking directory
+description: |
+  Find entries in the release tracking directory matching a query.
+
+inputs:
+  tracks-dir:
+    description: The release tracking directory
+    default: releases
+  track:
+    description: The track for the new release
+    required: true
+  version:
+    description: A unique version id for the release
+    required: true
+  created_at:
+    description: Timestamp for the release.
+  match-re:
+    description: |
+      Match versions using a regular expression over the string "{created_at}__{version}".
+      This feature is experimental, and you may run into "quote hell".
+outputs:
+  matches:
+    description: New-line separated list of matches
+    value: ${{ steps.find.outputs.MATCHES }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find matching releases
+      id: find
+      shell: python
+      run: |
+        import sys
+        sys.path.insert(0, "${{ github.action_path }}/src")
+        from release_tracker import find
+        matches = find(
+          tracks_dir="${{ inputs.tracks-dir }}",
+          track="${{ inputs.track }}",
+          version="${{ inputs.version }}",
+          created_at="${{ inputs.created-at }}",
+          match_re="""${{ inputs.match-re }}""")
+
+        import os
+        from pathlib import Path
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+          output.write("MATCHES<<EOF\n")
+          for match in matches:
+            output.write(f"{match['created_at']}__{match['version']}")
+          output.write("EOF\n")
+

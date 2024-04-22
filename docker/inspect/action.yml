@@ -1,29 +1,21 @@
 name: Inspect Multi-Platform Image
 description: |
-  Inspect the manifest of a multi-platform image, and create a log of referenced images,
-  which can be used to delete the images even if the image is untagged.
+  Inspect the manifest of one or more multi-platform images, and create a log of referenced images,
+  which can be used to delete the layers even if the images are untagged.
 
-  The action should be pointed to a directory where the manifest written in JSON
-  format and in multiple copies.
+  The output file is a JSON object with the following fields:
 
-  Each copy will be named after the sha256 hash of one of the layers referenced by
-  the manifest. The copies can be used to look up the manifest by hash of any of its layers.
-
+  - `images`: a dictionary, indexed over the image tags, containing
+     all image manifests.
+  - `layers`: a lookup object to map layer hashes to images
+     referencing them.
 inputs:
-  image:
-    description: The image to inspect
+  images:
+    description: The images to inspect
     required: true
   output:
-    description: Directory where to save the manifests.
-    required: false
-  output-prefix:
-    description: A prefix to be prepended before the hash in generated files.
-    required: false
-    default: ''
-  output-suffix:
-    description: The extension for the generated files.
-    required: false
-    default: '.json'
+    description: File to generate.
+    required: true
   registry:
     description: Image registry used for authentication.
     required: false
@@ -57,57 +49,16 @@ runs:
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-token }}
 
-    - name: Retrieve image manifest
-      id: manifest
-      shell: bash
+    - name: Retrieve image manifests and write output
+      shell: python
       run: |
-        # Download JSON manifest
-        docker buildx imagetools inspect ${{ inputs.image }} --raw > ${MANIFEST}
-        (
-          echo "MANIFEST<<EOF"
-          cat "${MANIFEST}"
-          echo EOF
-        ) >> ${GITHUB_OUTPUT}
-      env:
-        MANIFEST: ${{ github.action_path }}/manifest-summary.json
-    
-    - name: Generate layers list
-      id: layers
-      shell: bash
-      run: |
-        # Read list of layers
-        layers=$(cat ${MANIFEST} | jq -r '.manifests[].digest | split(":")[1] ')
-        (
-          echo "LAYERS<<EOF"
-          echo "${layers}"
-          echo EOF
-        ) >> ${GITHUB_OUTPUT}
-      env:
-        MANIFEST: ${{ github.action_path }}/manifest-summary.json
-
-
-    - name: Generate output files
-      id: files
-      shell: bash
-      run: |
-        # Generate one file per layer
-        files=
-        for layer in ${{ steps.layers.outputs.LAYERS }}; do
-          manifest_file="${{ inputs.output }}/${{ inputs.output-prefix }}${layer}${{ inputs.output-suffix }}"
-          mkdir -vp "$(dirname "${manifest_file}")"
-          if [ -z "${files}" ]; then
-            files="${manifest_file}"
-          else
-            files="${files}
-        ${manifest_file}"
-          fi
-          cp -v "${MANIFEST}" "${manifest_file}"
-        done
-
-        (
-          echo "FILES<<EOF"
-          echo "${files}"
-          echo EOF
-        ) >> ${GITHUB_OUTPUT}
-      env:
-        MANIFEST: ${{ github.action_path }}/manifest-summary.json
+        import sys
+        sys.path.insert(0, "${{ github.action_path }}/src")
+        from docker_helper import inspect
+        inspect(
+          images="""
+            ${{ inputs.images }}
+          """,
+          output="${{ inputs.output }}",
+          output_prefix="${{ inputs.output-prefix }}",
+          output_suffix="${{ inputs.output-suffix }}")
