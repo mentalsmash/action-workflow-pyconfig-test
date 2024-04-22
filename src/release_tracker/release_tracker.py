@@ -30,11 +30,10 @@ class ReleaseTracker:
   def __init__(self,
         repository: str,
         path: str,
-        storage_prefix: str = "releases") -> None:
+        storage: str = "releases") -> None:
     self.repository = repository.strip()
     self.path = Path(path.strip())
-    self.storage_prefix = storage_prefix.strip()
-    self.storage = self.path / self.storage_prefix
+    self.storage = self.path / storage.strip()
     self._release_logs = {}
   
   def configure_clone(self, user: tuple[str, str]):

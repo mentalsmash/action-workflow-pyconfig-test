@@ -9,7 +9,7 @@ inputs:
   path:
     description: The directory where the repository was cloned
     default: src/tracker
-  storage-prefix:
+  storage:
     description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
@@ -47,7 +47,7 @@ runs:
           repository="${{ inputs.repository }}",
           path="${{ inputs.path }}",
           user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),
-          storage_prefix="${{ inputs.storage-prefix }}")
+          storage="${{ inputs.storage }}")
 
         matches = tracker.find(
           track="${{ inputs.track }}",

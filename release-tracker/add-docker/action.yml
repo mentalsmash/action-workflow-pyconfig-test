@@ -10,7 +10,7 @@ inputs:
   path:
     description: The directory where the repository was cloned
     default: src/tracker
-  storage-prefix:
+  storage:
     description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
@@ -42,13 +42,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Clone tracking repository
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ inputs.repository }}
-        path: ${{ inputs.repository-dir }}
-        token: ${{ inputs.repository-token }}
-
     - name: Dump image manifest
       uses: mentalsmash/actions/docker/inspect@master
       with:
@@ -60,7 +53,7 @@ runs:
       with:
         repository: ${{ inputs.repository }}
         path: ${{ inputs.path }}
-        storage-prefix: ${{ inputs.storage_prefix }}
+        storage: ${{ inputs.storage }}
         track: ${{ inputs.track }}
         version: ${{ inputs.version }}
         files: |

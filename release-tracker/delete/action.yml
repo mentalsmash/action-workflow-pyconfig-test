@@ -9,7 +9,7 @@ inputs:
   path:
     description: The directory where the repository was cloned
     default: src/tracker
-  storage-prefix:
+  storage:
     description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
@@ -47,7 +47,7 @@ runs:
         tracker = ReleaseTracker(
           repository="${{ inputs.repository }}",
           path="${{ inputs.path }}",
-          storage_prefix="${{ inputs.storage-prefix }}")
+          storage="${{ inputs.storage }}")
 
         deleted = tracker.delete(
           track="${{ inputs.track }}",

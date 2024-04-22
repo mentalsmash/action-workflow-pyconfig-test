@@ -9,7 +9,7 @@ inputs:
   path:
     description: The directory where to clone the repository
     default: src/tracker
-  storage-prefix:
+  storage:
     description: Subdirectory within the repository where to store tracking files.
     default: releases
   user-name:
@@ -45,7 +45,7 @@ runs:
         tracker = ReleaseTracker(
           repository="${{ inputs.repository }}",
           path="${{ inputs.path }}",
-          storage_prefix="${{ inputs.storage-prefix }}")
+          storage="${{ inputs.storage }}")
 
         tracker.configure_clone(
           user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),)
