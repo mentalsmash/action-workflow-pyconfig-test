@@ -27,7 +27,7 @@ def initialize(tracks: str, tracks_dir: str) -> None:
   tracks_dir.mkdir(exist_ok=True, parents=True)
 
   tracks_yml = tracks_dir / "tracks.yml"
-  tracks_yml.write_test(yaml.safe_dump(tracks_cfg))
+  tracks_yml.write_text(yaml.safe_dump(tracks_cfg))
 
   # Initialize track directories
   for track in tracks_cfg["tracks"]:
