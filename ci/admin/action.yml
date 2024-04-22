@@ -22,7 +22,11 @@ runs:
       shell: python
       run: |
         import sys
-        sys.path.insert(0, "${{ github.action_path }}/src")
+        from pathlib import Path
+        action_dir = Path("${{ github.action_path }}")
+        repo_dir = action_dir.parent.parent.parentparent
+        src_dir = repo_dir / "src"
+        sys.path.insert(0, str(src_dir))
         from ci.admin import Admin
         print("::add-mask::${{ inputs.token }}")
         print("::group::ci-admin output")
