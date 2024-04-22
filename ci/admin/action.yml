@@ -19,7 +19,7 @@ runs:
   using: "composite"
   steps:
     - name: "Run ci-admin"
-      shell: bash
+      shell: python
       run: |
         import sys
         sys.path.insert(0, "${{ github.action_path }}/src")
