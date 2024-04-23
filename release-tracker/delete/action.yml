@@ -63,6 +63,7 @@ runs:
           """)
         
         # Add release log entry
+        import yaml
         print("::group::Deleted Entries")
         print(yaml.safe_dump(deleted))
         print("::endgroup::")

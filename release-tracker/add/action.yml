@@ -82,11 +82,11 @@ runs:
           commit=bool("${{ inputs.commit }}"),
           push=bool("${{ inputs.push }}"))
 
-        import yaml      
+        import yaml
         print("::group::New Release")
         print(yaml.safe_dump(entry))
         print("::endgroup::")
-      
+
         import os
         from pathlib import Path
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:

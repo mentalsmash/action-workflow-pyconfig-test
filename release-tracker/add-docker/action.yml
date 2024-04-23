@@ -68,7 +68,7 @@ runs:
           commit=bool("${{ inputs.commit }}"),
           push=bool("${{ inputs.push }}"))
 
-        import yaml      
+        import yaml
         print("::group::New Release")
         print(yaml.safe_dump(entry))
         print("::endgroup::")
