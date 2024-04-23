@@ -21,7 +21,8 @@ from .pyconfig import (
   tuple_to_dict,
   merge_dicts,
   sha_short,
-  extract_registries, 
+  extract_registries,
+  summarize_settings,
 )
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
   "merge_dicts",
   "sha_short",
   "extract_registries",
+  "summarize_settings",
 ]
