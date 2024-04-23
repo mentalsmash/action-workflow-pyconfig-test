@@ -19,13 +19,15 @@ import json
 import re
 import shutil
 import argparse
+import tempfile
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from git_helper import commit as git_commit, config_user as git_config_user
 from docker_helper import inspect as inspect_docker
 from cli_helper.log import log
 from cli_helper.inline_yaml import inline_yaml_load
+from ci.admin import Admin
 
 class ReleaseTracker:
   TracksConfigFile = "tracks.yml"
@@ -34,7 +36,11 @@ class ReleaseTracker:
   DefaultTracks = """
 tracks:
   - name: nightly
+    prune-policy: latest
+    prune-max-age: 0
   - name: stable
+    prune-policy: unique
+    prune-max-age: 0
 """
 
   @classmethod
@@ -169,6 +175,37 @@ tracks:
       help="Match based on a regular expression.",
       default=None)
 
+
+    parser_find_prunable = subparsers.add_parser(
+      "find-prunable", help=""
+    )
+    parser_find_prunable.add_argument("-t", "--track",
+      help="Target release track",
+      required=True)
+    parser_find_prunable.add_argument("-m", "--layer",
+      help="A tagged layer. Use - to read the list from stdin",
+      default=[],
+      action="append")
+    parser_find_prunable.add_argument(
+      "-a",
+      "--max-age",
+      help='Maximum number of days since the version was created to consider if "prunable" (floating point number).',
+      default=None,
+      type=float,
+    )
+
+
+    parser_find_prunable_docker = subparsers.add_parser(
+      "find-prunable-docker", help=""
+    )
+    parser_find_prunable_docker.add_argument("-t", "--track",
+      help="Target release track",
+      required=True)
+    parser_find_prunable_docker.add_argument("-p", "--prunable-version",
+      help="Mark version as prunable to preserve it. Use - to read the list from stdin. Leave empty to determine the list of prunable versions automatically.",
+      default=[],
+      action="append")
+
     return parser
 
   @classmethod
@@ -225,6 +262,16 @@ tracks:
         match_re=args.regex,
         commit=args.commit,
         push=args.push)
+    elif args.action == "find-prunable-docker":
+      prunable = tracker.find_prunable_docker_layers(
+        track=args.track,
+        prunable_versions="\n".join(args.prunable_version))
+      for pruned in prunable:
+          print(pruned)
+    elif args.action == "find-prunable":
+      prunable = tracker.find_prunable(track=args.track)
+      for pruned in prunable:
+        print(pruned)
     else:
       raise RuntimeError("action not implemented", args.action)
 
@@ -242,11 +289,21 @@ tracks:
     self.path = Path(str(path).strip())
     self.storage = self.path / storage.strip()
     self._release_logs = {}
-  
+    tracks_yml = self.storage / self.TracksConfigFile
+    self.tracks = (
+      {} if not tracks_yml.exists()
+      else yaml.safe_load(tracks_yml.read_text())
+    )
+
   def configure_clone(self, user: tuple[str, str]):
     git_config_user(clone_dir=self.path, user=user)
 
+
+  def track_config(self, track: str) -> dict:
+    return next(t for t in self.tracks["tracks"] if t["name"] == track)
+
   def initialize(self,
+      project_repo: str,
       tracks: str,
       commit: bool = False,
       push: bool = False) -> None:
@@ -254,16 +311,16 @@ tracks:
     tracks = tracks.strip()
     if not tracks:
       tracks = self.DefaultTracks
-    tracks_cfg = yaml.safe_load(tracks)
+    self.tracks = yaml.safe_load(tracks)
 
     # Create base directory and write tracks.yml
     self.storage.mkdir(exist_ok=True, parents=True)
 
     tracks_yml = self.storage / self.TracksConfigFile
-    tracks_yml.write_text(yaml.safe_dump(tracks_cfg))
+    tracks_yml.write_text(yaml.safe_dump(self.tracks))
 
     # Initialize track directories
-    for track in tracks_cfg["tracks"]:
+    for track in self.tracks["tracks"]:
       track_dir = self.storage / track["name"]
       track_dir.mkdir(exist_ok=True)
       track_log = track_dir / self.ReleaseLogFile
@@ -342,12 +399,11 @@ tracks:
       created_at: str | None = None,
       commit: bool = False,
       push: bool = False) -> dict:
-    import tempfile
     tmp_h = tempfile.TemporaryDirectory()
     tmp_dir = Path(tmp_h.name)
     manifest = tmp_dir / "docker-manifests.json"
     inspect_docker(images, manifest)
-    self.add(
+    return self.add(
       track=track,
       version=version,
       files="\n".join(map(str, [
@@ -356,6 +412,114 @@ tracks:
       created_at=created_at,
       commit=commit,
       push=push)
+
+
+  def find_prunable(self,
+      track: str
+    ) -> list[str]:
+    def _find_prunable_unique():
+      # Keep the most recent release for every version
+      versions_by_id = {}
+      for version in self.release_log(track):
+        version_id = self.version_id(version["created_at"], version["version"])
+        vid_versions = versions_by_id[version_id] = versions_by_id.get(version_id, [])
+        vid_versions.append(version_id)
+      return sorted({
+        vid
+        for versions in versions_by_id.items()
+        for vid in versions[:-1] # skip most recent recent release for every version
+      })
+
+    def _find_prunable_latest():
+      # Keep only the most recent release for the track
+      return sorted({
+        vid
+        for version in self.release_log(track)[:-1]
+        for vid in [self.version_id(version["created_at"], version["version"])]
+      })
+
+    track_cfg = self.track_config(track)
+    prune_policy = track_cfg.get("prune-policy", "unique") 
+    log.info("[{}] pruning with policy: {}", track, prune_policy)
+    if prune_policy == "unique":
+      prunable = _find_prunable_unique()
+    else:
+      prunable = _find_prunable_latest()
+    
+    max_age = track_cfg.get("prune-max-age", 0)
+    if max_age > 0:
+      max_age = timedelta(days=max_age)
+      old_enough = []
+      now = datetime.now()
+      for version_id in prunable:
+        v_date = datetime.strptime(version_id[:version_id.index("__")], self.DateFormat)
+        if now - v_date < max_age:
+          continue
+        old_enough.append(version_id)
+      prunable = old_enough
+
+    return prunable
+
+
+  def find_prunable_docker_layers(self,
+      track: str,
+      prunable_versions: str) -> list[str]:
+    def _load_layers(version_id: str) -> list[str]:
+      version_dir = track_dir / version_id
+      docker_manifests_f = version_dir / "docker-manifests.json"
+      if not docker_manifests_f.exists():
+        log.debug("[{}][{}] not a docker release", track, version_id)
+        return set()
+
+      docker_manifests = json.loads(docker_manifests_f.read_text())
+      return set(docker_manifests["layers"].keys())
+
+    def _parse_prunable_versions(versions: str) -> list[str]:
+      return [
+        vid
+        for vid in versions.strip().splitlines()
+        for vid in [vid.strip()]
+        if vid
+      ]
+    
+    prunable_versions = _parse_prunable_versions(prunable_versions)
+    if not prunable_versions:
+      prunable_versions = self.find_prunable(track)
+    elif "-" in prunable_versions:
+      log.debug("reading prunable versions from stdin")
+      prunable_versions = sys.stdin.readlines()
+    if not prunable_versions:
+      log.warning("[{}] no prunable versions specified nor detected", track)
+      return []
+
+    log.info("[{}] scanning for prunable docker layer with {} prunabel versions", track, len(prunable_versions))
+    for vid in sorted(prunable_versions):
+      log.info("[{}] - {}", track, vid)
+
+    prunable_docker_versions = set()
+    unprunable_layers = set()
+
+    track_dir = self.storage / track
+    for version_entry in self.release_log(track):
+      version_id = self.version_id(version_entry["created_at"], version_entry["version"])
+      v_layers = _load_layers(version_id)
+      if not v_layers:
+        continue
+      log.debug("[{}][{}] inspecting version ({} layers)", track, version_id, len(v_layers))
+      if version_id not in prunable_versions:
+        unprunable_layers = unprunable_layers | v_layers
+      else:
+        prunable_docker_versions.add(version_id)
+    
+    prunable_layers = {
+      layer
+      for version_id in prunable_docker_versions
+        for layer in _load_layers(version_id)
+          if layer not in unprunable_layers
+    }
+    log.info("[{}] {} prunable layers from {} docker versions", track, len(prunable_docker_versions), len(prunable_layers))
+    
+    return prunable_layers
 
 
   def release_log(self, track: str) -> list[dict]:

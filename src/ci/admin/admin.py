@@ -15,6 +15,7 @@ from .pr_closed import pr_closed
 from .pr_runs import pr_runs
 from .nightly_cleanup import nightly_cleanup
 from cli_helper.log import log
+from cli_helper.inline_yaml import inline_yaml_load
 
 class Admin:
   ###############################################################################
@@ -110,10 +111,56 @@ class Admin:
           noop=args.noop,
           if_package_exists=args.if_package_exists)
       elif args.action == "prune-versions":
-        cls.prune_versions(
+        if args.prunable == "-":
+          def _input():
+            return sys.stdin.readlines()
+        else:
+          def _input():
+            return Path(args.prunable).read_text().splitlines()
+        
+        def _prunable():
+         for line in [
+            line
+            for line in _input()
+            for line in [line.strip()]
+            if line
+          ]:
+           yield line
+        
+        def _prune(filter: str) -> None:
+          # cls.delete_versions(org=org,)
+          for version in PackageVersion.delete(
+            package=args.package,
+            org=args.org,
+            filter=filter,
+            noop=args.noop,
+          ):
+            output(str(version))
+
+        max_arg_len = 131072
+
+        tabulate_columns(*PackageVersion._fields)
+        prunable = _prunable()
+        batch = ""
+        next_line = next(prunable, None)
+        while next_line is not None:
+          line_token = "".join(("'", next_line))
+          if len(batch) + len(next_line) > max_arg_len:
+            _prune(batch)
+            batch = ""
+          batch = (
+            " | ".join((batch, line_token))
+            if batch else line_token
+          )
+          next_line = next(prunable, None)
+        if batch:
+          _prune(batch)
+
+      elif args.action == "prune-versions-untagged":
+        cls.prune_versions_untagged(
           package=args.package,
           org=args.org,
-          max_age=args.max_age,
+          prunable=prunable,
           noop=args.noop)
       elif args.action == "nightly-cleanup":
         cls.nightly_cleanup(repo=args.repository, noop=args.noop)
@@ -284,13 +331,16 @@ class Admin:
     parser_prune_versions.add_argument(
       "-o", "--org", help="Target GitHub organization.", default=None
     )
-    parser_prune_versions.add_argument(
-      "-a",
-      "--max-age",
-      help='Maximum number of days since the last update to consider the image "prunable" (floating point number).',
-      default=None,
-      type=float,
-    )
+    # parser_prune_versions.add_argument(
+    #   "-a",
+    #   "--max-age",
+    #   help='Maximum number of days since the last update to consider the image "prunable" (floating point number).',
+    #   default=None,
+    #   type=float,
+    # )
+    parser_prune_versions.add_argument("-P", "--prunable",
+      help="List of prunable versions or - to read it from stdin",
+      required=True)
 
     parser_nightly_cleanup = subparsers.add_parser(
       "nightly-cleanup", help="Clean up workflow runs for nightly releases"
@@ -365,7 +415,7 @@ class Admin:
       output(str(run))
 
   @classmethod
-  def prune_versions(cls, org, package, max_age, noop) -> None:
+  def prune_versions_untagged(cls, org, package, max_age, noop) -> None:
     max_age = timedelta(days=max_age) if max_age else None
     tabulate_columns(*PackageVersion._fields)
     for run in PackageVersion.prune_untagged(
