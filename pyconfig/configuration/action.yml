@@ -88,7 +88,7 @@ runs:
         Path("${{ inputs.output }}").write_text(cfg_json)
 
         if "${{ inputs.summarize }}":
-          Path(os.environ["GITHUB_STEP_SUMMARY"]).open("w") as output:
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("w") as output:
             output.write(summarize_settings(
               clone_dir=clone_dir,
               config_dir=config_dir,
