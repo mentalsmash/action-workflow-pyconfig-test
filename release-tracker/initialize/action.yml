@@ -61,20 +61,20 @@ runs:
           path="${{ inputs.path }}",
           storage="${{ inputs.storage }}")
 
-        # tracker.initialize(
-        #   tracks="""
-        #     ${{ inputs.tracks }}
-        #   """,
-        #   commit=bool("${{ inputs.commit }}"),
-        #   push=bool("${{ inputs.push }}"))
-
         tracker.initialize(
           tracks="""
             ${{ inputs.tracks }}
-          """)
+          """,
+          commit=bool("${{ inputs.commit }}"),
+          push=bool("${{ inputs.push }}"))
+
+        # tracker.initialize(
+        #   tracks="""
+        #     ${{ inputs.tracks }}
+        #   """)
     
-    - name: Commit & Push
-      uses: actions-js/push@master
-      with:
-        github_token: ${{ inputs.token }}
-        directory: ${{ inputs.path }}
+    # - name: Commit & Push
+    #   uses: actions-js/push@master
+    #   with:
+    #     github_token: ${{ inputs.token }}
+    #     directory: ${{ inputs.path }}
