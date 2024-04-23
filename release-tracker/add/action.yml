@@ -60,6 +60,8 @@ runs:
       shell: python
       id: add
       run: |
+        import yaml
+        import json
         import sys
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
@@ -94,7 +96,6 @@ runs:
           output.write(json.dumps(summary))
           output.write("\n")
 
-        import yaml
         print("::group::New Release")
         print(yaml.safe_dump(entry))
         print("::endgroup::")

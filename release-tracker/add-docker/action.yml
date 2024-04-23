@@ -51,6 +51,7 @@ runs:
       run: |
         import sys
         import yaml
+        import json
         import os
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
