@@ -463,7 +463,7 @@ tracks:
 
   def find_prunable_docker_layers(self,
       track: str,
-      prunable_versions: str) -> list[str]:
+      prunable_versions: str) -> tuple[list[str], list[str]]:
     def _load_layers(version_id: str) -> list[str]:
       version_dir = track_dir / version_id
       docker_manifests_f = version_dir / "docker-manifests.json"
@@ -490,7 +490,7 @@ tracks:
       prunable_versions = sys.stdin.readlines()
     if not prunable_versions:
       log.warning("[{}] no prunable versions specified nor detected", track)
-      return []
+      return tuple([], [])
 
     log.info("[{}] scanning for prunable docker layer with {} prunabel versions", track, len(prunable_versions))
     for vid in sorted(prunable_versions):
@@ -519,7 +519,7 @@ tracks:
     }
     log.info("[{}] {} prunable layers from {} docker versions", track, len(prunable_docker_versions), len(prunable_layers))
     
-    return prunable_layers
+    return (prunable_versions, prunable_layers)
 
 
   def release_log(self, track: str) -> list[dict]:
@@ -543,10 +543,24 @@ tracks:
       version: str | None = None,
       created_at: str | None = None,
       match_re: str | None = None,
-      versions_only: bool=False) -> list[tuple[int, str | dict]]:
+      versions_only: bool=False,
+      entries: str | None = None) -> list[tuple[int, str | dict]]:
     release_log = self.release_log(track)
+
+    match_re = (match_re or "").strip()
+    version = (version or "").strip()
+    created_at = (created_at or "").strip()
+    entries = (entries or "").strip()
+
     # Find candidates
-    if match_re:
+    if entries:
+      candidates = [
+        (i, release)
+        for i, release in enumerate(release_log)
+          for vid in [self.version_id(release["created_at"], release["version"])]
+            if vid in entries
+      ]
+    elif match_re:
       # Search by regex
       match_re = re.compile(match_re.strip())
       candidates = [
@@ -581,6 +595,7 @@ tracks:
       version: str,
       created_at: str | None = None,
       match_re: str | None = None,
+      entries: str | None = None,
       commit: bool = False,
       push: bool = False) -> list[tuple[int, str]]:
     # Read current log contents
@@ -592,7 +607,8 @@ tracks:
       version=version,
       created_at=created_at,
       match_re=match_re,
-      versions_only=True)
+      versions_only=True,
+      entries=entries)
 
     track_dir = self.storage / track
 

@@ -28,6 +28,9 @@ outputs:
   layers:
     description: List of prunable docker layers.
     value: ${{ steps.find.outputs.LAYERS }}
+  versions:
+    description: List of prunable versions.
+    value: ${{ steps.find.outputs.VERSIONS }}
 
 runs:
   using: "composite"
@@ -49,22 +52,35 @@ runs:
           user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),
           storage="${{ inputs.storage }}")
 
-        prunable = tracker.find_prunable_docker_layers(
+        prunable_versions, prunable_layers = tracker.find_prunable_docker_layers(
           track="${{ inputs.track }}",
           prunable_versions="""
             ${{ inputs.prunable-versions }}
           """)
         
         print("::group::Prunable Layers")
-        for layer in prunable
-        print(layer)
+        for layer in prunable_layers:
+          print(layer)
+        print("::endgroup::")
+
+        print("::group::Prunable Versions")
+        for vid in prunable_versions:
+          print(vid)
         print("::endgroup::")
 
         import os
         from pathlib import Path
+        
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
           output.write("LAYERS<<EOF\n")
-          for match in prunable:
-            output.write(f"{match['created_at']}__{match['version']}")
+          for match in prunable_layers:
+            output.write(match)
+            output.write("\n")
+          output.write("EOF\n")
+
+          output.write("VERSIONS<<EOF\n")
+          for match in prunable_versions:
+            output.write(match)
+            output.write("\n")
           output.write("EOF\n")
 

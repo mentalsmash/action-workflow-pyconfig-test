@@ -13,13 +13,13 @@ inputs:
     description: Subdirectory within the repository the tracking files are stored.
     default: releases
   track:
-    description: The track for the new release
+    description: The track for the release
     required: true
   version:
-    description: A unique version id for the new release
+    description: The version for the release
     required: true
   created_at:
-    description: A timestamp for the new releases. Any release matching the version will be deleted if unspecified.
+    description: The release timestamp. Any release matching the version will be deleted if unspecified.
   match-re:
     description: |
       Match versions using a regular expression over the string "{created_at}__{version}".
@@ -30,6 +30,8 @@ inputs:
   push:
     description: Push new commit to remote repository. Set to empty to disable.
     default: yes
+  entries:
+    description: A new-line separated list of version id (date + version) to be deleted.
 
 runs:
   using: "composite"
@@ -55,7 +57,10 @@ runs:
           created_at="${{ inputs.created-at }}",
           match_re="""${{ inputs.match-re }}""",
           commit=bool("${{ inputs.commit }}"),
-          push=bool("${{ inputs.push }}"))
+          push=bool("${{ inputs.push }}"),
+          entries="""
+            ${{ inputs.entries }}
+          """)
         
         # Add release log entry
         print("::group::Deleted Entries")

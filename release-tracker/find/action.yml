@@ -61,5 +61,6 @@ runs:
           output.write("MATCHES<<EOF\n")
           for match in matches:
             output.write(f"{match['created_at']}__{match['version']}")
+            output.write("\n")
           output.write("EOF\n")
 
