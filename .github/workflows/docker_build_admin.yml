@@ -61,7 +61,7 @@ jobs:
           action: push
           base-image: ${{ steps.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
           build-platforms: ${{ steps.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
-          dockerfile: ${{ env.CLONE_DIR }}/docker/admin/Dockerfile
+          dockerfile: ${{ env.CLONE_DIR }}/dockerfiles/admin/Dockerfile
           context: ${{ env.CLONE_DIR }}
           image-repos: ${{ steps.config.outputs.ADMIN_IMAGE_REPO }}
           image-tags-config: ${{ steps.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
