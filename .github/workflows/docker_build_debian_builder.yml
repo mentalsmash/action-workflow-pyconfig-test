@@ -83,6 +83,7 @@ jobs:
           dockerfile: ${{ env.CLONE_DIR }}/dockerfiles/debian-builder/Dockerfile
           context: ${{ env.CLONE_DIR }}
           image-repos: ${{ needs.config.outputs.DEB_BUILDER_IMAGE_REPO }}
+          image-tag-from-base-image: yes
           github-token: ${{ needs.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
           github-user: ${{ needs.config.outputs.LOGIN_GITHUB && github.actor || '' }}
           dockerhub-token: ${{ needs.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}

@@ -16,13 +16,16 @@ inputs:
     description: Build context
     default: .
   image-tags:
-    description: image tags
+    description: image tags used when not pushing the image
     default: ''
   image-tags-config:
     description: image tag configurations for `docker/metadata-action`
     default: latest
   image-flavor-config:
     description: image flavor configurations for `docker/metadata-action`
+    default: ''
+  image-tag-from-base-image:
+    description: derive image tag from base image
     default: ''
   github-token:
     description: GitHub login token
@@ -65,21 +68,19 @@ runs:
         username: ${{ inputs.dockerhub-user }}
         password: ${{ inputs.dockerhub-token }}
 
-    - name: Generate base image tag
-      id: base-image-tag
-      shell: bash
-      run: |
-        # Automatically derive tag from base image if no config provided
-        echo IMAGE_TAG=$(echo "${{ inputs.base-image}}" | tr / - | tr : -) >> ${GITHUB_OUTPUT}
-
     - name: Generate image tags
       id: image-tags
       shell: bash
       run: |
         (
-          echo "IMAGE_TAGS<<EOF"
-          echo "${{ inputs.image-tags-config }}"
-          echo EOF
+          if [ -n "${{ inputs.image-tag-from-base-image }}" ]; then
+            # Automatically derive tag from base image if no config provided
+            echo IMAGE_TAGS=$(echo "${{ inputs.base-image }}" | tr / - | tr : -)
+          else
+            echo "IMAGE_TAGS<<EOF"
+            echo "${{ inputs.image-tags-config }}"
+            echo EOF
+          fi
         ) >> ${GITHUB_OUTPUT}
 
     - name: Generate image repos

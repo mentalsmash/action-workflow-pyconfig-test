@@ -7,7 +7,7 @@ ci:
     admin:
       build_platforms:
       - linux/amd64
-      base_image: ubuntu:22.04  
+      base_image: ubuntu:22.04
       image: ghcr.io/mentalsmash/ci-admin:latest
 
 #############################################################################
