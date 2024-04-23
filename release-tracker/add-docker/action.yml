@@ -30,6 +30,9 @@ inputs:
   push:
     description: Push new commit to remote repository. Set to empty to disable.
     default: yes
+  summary:
+    description: A JSON file that will be created with a JSON summary of the created entry
+    default: tracker-summary.json
 
 outputs:
   entry:
@@ -47,6 +50,8 @@ runs:
       id: add
       run: |
         import sys
+        import yaml
+        import os
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
@@ -58,8 +63,10 @@ runs:
           path="${{ inputs.path }}",
           storage="${{ inputs.storage }}")
 
+        track = "${{ inputs.track }}".strip()
+
         entry = tracker.add_docker(
-          track="${{ inputs.track }}",
+          track=track,
           version="${{ inputs.version }}",
           created_at="${{ inputs.created-at }}",
           images="""
@@ -68,18 +75,26 @@ runs:
           commit=bool("${{ inputs.commit }}"),
           push=bool("${{ inputs.push }}"))
 
-        import yaml
+        summary = {
+          "entry": entry,
+          "repository": tracker.repository,
+          "path": str(tracker.path),
+          "storage": str(tracker.storage),
+          "track": track,
+        }
+        with Path("${{ inputs.summary }}").open("w") as output:
+          output.write(json.dumps(summary))
+          output.write("\n")
+
         print("::group::New Release")
         print(yaml.safe_dump(entry))
         print("::endgroup::")
       
-        import os
-        from pathlib import Path
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
           output.write("ENTRY=")
           output.write(f"{entry['created_at']}__{entry['version']}")
           output.write("\n")
 
-          output.write("CREATED_ENTRY=")
+          output.write("CREATED_AT=")
           output.write(entry["created_at"])
           output.write("\n")

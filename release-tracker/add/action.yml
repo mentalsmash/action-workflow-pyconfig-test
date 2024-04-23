@@ -72,8 +72,9 @@ runs:
           path="${{ inputs.path }}",
           storage="${{ inputs.storage }}")
 
+        track = "${{ inputs.track }}".strip()
         entry = tracker.add(
-          track="${{ inputs.track }}",
+          track=track,
           version="${{ inputs.version }}",
           created_at="${{ inputs.created-at }}",
           files="""
@@ -81,6 +82,17 @@ runs:
           """,
           commit=bool("${{ inputs.commit }}"),
           push=bool("${{ inputs.push }}"))
+
+        summary = {
+          "entry": entry,
+          "repository": tracker.repository,
+          "path": str(tracker.path),
+          "storage": str(tracker.storage),
+          "track": track,
+        }
+        with Path("${{ inputs.summary }}").open("w") as output:
+          output.write(json.dumps(summary))
+          output.write("\n")
 
         import yaml
         print("::group::New Release")
@@ -94,7 +106,7 @@ runs:
           output.write(f"{entry['created_at']}__{entry['version']}")
           output.write("\n")
 
-          output.write("CREATED_ENTRY=")
+          output.write("CREATED_AT=")
           output.write(entry["created_at"])
           output.write("\n")
 
