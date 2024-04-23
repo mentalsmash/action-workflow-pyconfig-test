@@ -49,7 +49,6 @@ runs:
         tracker = ReleaseTracker(
           repository="${{ inputs.repository }}",
           path="${{ inputs.path }}",
-          user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),
           storage="${{ inputs.storage }}")
 
         prunable_versions, prunable_layers = tracker.find_prunable_docker_layers(
