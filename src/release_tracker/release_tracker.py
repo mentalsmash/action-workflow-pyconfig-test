@@ -246,7 +246,6 @@ tracks:
   def configure_clone(self, user: tuple[str, str]):
     git_config_user(clone_dir=self.path, user=user)
 
-
   def initialize(self,
       tracks: str,
       commit: bool = False,
@@ -270,13 +269,12 @@ tracks:
       track_log = track_dir / self.ReleaseLogFile
       track_log.write_text(json.dumps([]))
 
-    if commit:
+    if (commit or push):
       git_commit(
         clone_dir=self.path,
         message="[tracker] initialized",
         untracked=[self.storage.relative_to(self.path)],
         push=push)
-
 
   def add(self,
       track: str,

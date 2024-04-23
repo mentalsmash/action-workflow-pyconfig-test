@@ -31,6 +31,7 @@ runs:
         path: ${{ inputs.path }}
         token: ${{ inputs.token }}
         ref: ${{ inputs.ref || github.ref_name }}
+        fetch-depth: 0
 
     - name: Initialize release tracker clone
       shell: python
