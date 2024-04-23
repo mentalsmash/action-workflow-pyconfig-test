@@ -1,0 +1,25 @@
+name: Docker Build (Periodic Trigger)
+run-name: docker build [periodic trigger]
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 1 1 * *"
+
+concurrency:
+  group: docker-build
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  build-image-debian-builder:
+    uses: ./.github/workflows/docker_build_debian_builder.yml
+    secrets: inherit
+
+  build-image-admin:
+    uses: ./.github/workflows/docker_build_admin.yml
+    secrets: inherit

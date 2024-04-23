@@ -14,10 +14,33 @@ inputs:
   cwd:
     description: Local directory where to run the script.
     default: ''
+  github-token:
+    description: GitHub login token
+  github-user:
+    description: GitHub user
+  dockerhub-token:
+    description: DockerHub login token
+  dockerhub-user:
+    description: DockerHub user
 
 runs:
   using: "composite"
   steps:
+    - name: Log in to GitHub
+      uses: docker/login-action@v3
+      if: inputs.github-token
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.github-user }}
+        password: ${{ inputs.github-token }}
+
+    - name: Log in to DockerHub
+      uses: docker/login-action@v3
+      if: inputs.dockerhub-token
+      with:
+        username: ${{ inputs.dockerhub-user }}
+        password: ${{ inputs.dockerhub-token }}
+
     - name: "Run ci-admin"
       shell: python
       run: |

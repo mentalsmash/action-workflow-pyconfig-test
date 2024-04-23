@@ -1,0 +1,85 @@
+name: Docker Build (debian-builder)
+run-name: |
+  docker build [debian-builder]
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+
+  push:
+    branches:
+      - master
+    paths:
+      - docker/debian-builder/**
+      - .github/workflows/image_build_debian_builder.yml
+      - .github/workflows_pyconfig/settings.*
+
+concurrency:
+  group: image-build-debian-builder
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+env:
+  CLONE_DIR: src/repo
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      CLONE_DIR: ${{ steps.config.outputs.CLONE_DIR }}
+      DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX: ${{ steps.config.outputs.DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX }}
+      DEB_BUILDER_IMAGE_BUILD_PLATFORMS: ${{ steps.config.outputs.DEB_BUILDER_IMAGE_BUILD_PLATFORMS }}
+      DEB_BUILDER_IMAGE_REPO: ${{ steps.config.outputs.DEB_BUILDER_IMAGE_REPO }}
+      LOGIN_DOCKERHUB: ${{ steps.config.outputs.LOGIN_DOCKERHUB }}
+      LOGIN_GITHUB: ${{ steps.config.outputs.LOGIN_GITHUB }}
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+  
+      - name: Configure workflow
+        id: config
+        run: |
+          (
+            echo CLONE_DIR=$(jq '.build.clone_dir' -r pyconfig.json)
+            echo DEB_BUILDER_IMAGE_REPO=$(jq '.debian.builder.repo' -r pyconfig.json)
+            echo DEB_BUILDER_IMAGE_BUILD_PLATFORMS=$(jq '.debian.builder.build_platforms_config' -r pyconfig.json)
+            echo DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX=$(jq '.debian.builder.base_images_matrix' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.debian.builder.login.github' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.debian.builder.login.dockerhub' -r pyconfig.json)
+          ) | tee -a ${GITHUB_OUTPUT}
+
+
+  build:
+    needs:
+      - config
+    strategy:
+      matrix:
+        base-image: ${{ fromJson(needs.config.outputs.DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          base-image: ${{ matrix.base-image }}
+          build-platforms: ${{ needs.config.outputs.DEB_BUILDER_IMAGE_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/debian-builder/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ needs.config.outputs.DEB_BUILDER_IMAGE_REPO }}
+          github-token: ${{ needs.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ needs.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ needs.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ needs.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+          action: push
+    

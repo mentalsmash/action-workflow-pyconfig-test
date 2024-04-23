@@ -1,0 +1,72 @@
+name: Docker Build (admin)
+run-name: |
+  docker build [admin]
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+
+  push:
+    branches:
+      - master
+    paths:
+      - docker/admin/**
+      - .github/workflows/image_build_admin.yml
+      - .github/workflows_pyconfig/settings.*
+
+concurrency:
+  group: image-build-admin
+  cancel-in-progress: true
+
+permissions:
+  packages: write
+  contents: read
+
+env:
+  CLONE_DIR: src/repo
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+      
+      - name: Load configuration
+        uses: mentalsmash/actions/pyconfig/configuration@master
+        with:
+          clone-dir: ${{ env.CLONE_DIR }}
+  
+      - name: Configure workflow
+        id: config
+        run: |
+          (
+            echo ADMIN_IMAGE_REPO=$(jq '.ci.images.admin.repo' -r pyconfig.json)
+            echo "ADMIN_IMAGE_TAGS_CONFIG<<EOF"
+            jq '.ci.images.admin.tags_config' -r pyconfig.json
+            echo EOF
+            echo ADMIN_IMAGE_BASE_IMAGE=$(jq '.ci.images.admin.base_image' -r pyconfig.json)
+            echo ADMIN_IMAGE_BUILD_PLATFORMS=$(jq '.ci.images.admin.build_platforms_config' -r pyconfig.json)
+            echo LOGIN_DOCKERHUB=$(jq '.ci.images.admin.login.dockerhub' -r pyconfig.json)
+            echo LOGIN_GITHUB=$(jq '.ci.images.admin.login.github' -r pyconfig.json)
+          ) | tee -a ${GITHUB_OUTPUT}
+      
+      - name: Build image
+        uses: mentalsmash/actions/docker/builder@master
+        with:
+          action: push
+          base-image: ${{ steps.config.outputs.ADMIN_IMAGE_BASE_IMAGE }}
+          build-platforms: ${{ steps.config.outputs.ADMIN_IMAGE_BUILD_PLATFORMS }}
+          dockerfile: ${{ env.CLONE_DIR }}/docker/admin/Dockerfile
+          context: ${{ env.CLONE_DIR }}
+          image-repos: ${{ steps.config.outputs.ADMIN_IMAGE_REPO }}
+          image-tags-config: ${{ steps.config.outputs.ADMIN_IMAGE_TAGS_CONFIG }}
+          github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
+          github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
+          dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+

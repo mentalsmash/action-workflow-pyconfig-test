@@ -1,1 +1,24 @@
-foo: foo
+#############################################################################
+# CI infrastructure settings
+#############################################################################
+ci:
+  images:
+    # Docker image with administration tools
+    admin:
+      build_platforms:
+      - linux/amd64
+      base_image: ubuntu:22.04  
+      image: ghcr.io/mentalsmash/ci-admin:latest
+
+#############################################################################
+# Debian packaging settings
+#############################################################################
+debian:
+  builder:
+    architectures:
+    - amd64
+    - arm64
+    base_images:
+    - ubuntu:22.04
+    repo: ghcr.io/mentalsmash/debian-builder
+
