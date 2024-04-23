@@ -15,7 +15,6 @@ from .pr_closed import pr_closed
 from .pr_runs import pr_runs
 from .nightly_cleanup import nightly_cleanup
 from cli_helper.log import log
-from cli_helper.inline_yaml import inline_yaml_load
 
 class Admin:
   ###############################################################################

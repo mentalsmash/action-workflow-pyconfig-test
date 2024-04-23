@@ -267,6 +267,9 @@ def configuration(
     {
       "build": {
         "clone_dir": str(clone_dir),
+        "config_dir": str(config_dir),
+        "settings_file": str(cfg_file.relative_to(config_dir)) if cfg_file.exists() else "",
+        "settings_module": str(cfg_mod_py.relative_to(config_dir)) if cfg_mod_py.exists() else "",
       },
     },
   )

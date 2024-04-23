@@ -32,7 +32,7 @@ inputs:
     default: yes
   summary:
     description: A JSON file that will be created with a JSON summary of the created entry
-    default: tracker-summary.json
+    default: release-tracker-summary.json
 
 outputs:
   entry:
