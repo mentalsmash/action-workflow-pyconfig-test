@@ -1,5 +1,5 @@
 from .workflow_run import WorkflowRun
-from .log import log
+from cli_helper.log import log
 from .globals import script_noninteractive
 
 ###############################################################################

@@ -6,7 +6,7 @@ from typing import NamedTuple, TextIO
 from datetime import datetime
 from functools import partial
 
-from .log import log
+from cli_helper.log import log
 from .fzf import fzf_filter
 from .data_object import DataObject, parse
 from .gh_api import gh_api

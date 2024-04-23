@@ -40,10 +40,6 @@ inputs:
     default: yes
   tracks:
     description: Release tracks configuration
-    default: |
-      tracks:
-        - name: nightly
-        - name: stable
 
 runs:
   using: "composite"

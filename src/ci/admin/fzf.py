@@ -1,7 +1,7 @@
 import subprocess
 
 from .globals import script_noninteractive
-from .log import log
+from cli_helper.log import log
 
 ###############################################################################
 # Filter a list using fzf

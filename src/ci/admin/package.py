@@ -3,7 +3,7 @@ from datetime import datetime
 from functools import partial
 
 from .data_object import DataObject, build, parse
-from .log import log
+from cli_helper.log import log
 from .gh_api import gh_api
 from .fzf import fzf_filter
 

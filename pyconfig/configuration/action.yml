@@ -73,7 +73,7 @@ runs:
           workflow=workflow if workflow else None,
           as_tuple=False)
 
-        cfg_json = json.dumps(cfg)
+        cfg_json = json.dumps(cfg, indent=2)
 
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
           output.write("SETTINGS<<EOF\n")

@@ -3,7 +3,7 @@ import traceback
 from typing import NamedTuple
 from datetime import datetime
 
-from .log import log
+from cli_helper.log import log
 from .date import github_date_parse, github_date_str
 
 ###############################################################################

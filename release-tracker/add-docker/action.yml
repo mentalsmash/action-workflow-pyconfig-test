@@ -42,21 +42,44 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Dump image manifest
-      uses: mentalsmash/actions/docker/inspect@master
-      with:
-        images: ${{ inputs.images }}
-        output: ${{ github.action_path }}/images.json
+    - name: Create docker release log entry
+      shell: python
+      id: add
+      run: |
+        import sys
+        from pathlib import Path
+        src_dir = Path("${{ github.action_path }}").parent.parent / "src"
+        sys.path.insert(0, str(src_dir))
 
-    - name: Add entry to release tracker
-      uses: mentalsmash/actions/release-tracker/add@master
-      with:
-        repository: ${{ inputs.repository }}
-        path: ${{ inputs.path }}
-        storage: ${{ inputs.storage }}
-        track: ${{ inputs.track }}
-        version: ${{ inputs.version }}
-        files: |
-          images.json
-        commit: ${{ inputs.commit }}
-        push: ${{ inputs.push }}
+        from release_tracker import ReleaseTracker
+
+        tracker = ReleaseTracker(
+          repository="${{ inputs.repository }}",
+          path="${{ inputs.path }}",
+          storage="${{ inputs.storage }}")
+
+        entry = tracker.add_docker(
+          track="${{ inputs.track }}",
+          version="${{ inputs.version }}",
+          created_at="${{ inputs.created-at }}",
+          images="""
+            ${{ inputs.images }}
+          """,
+          commit=bool("${{ inputs.commit }}"),
+          push=bool("${{ inputs.push }}"))
+
+        import yaml      
+        print("::group::New Release")
+        print(yaml.safe_dump(entry))
+        print("::endgroup::")
+      
+        import os
+        from pathlib import Path
+        with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+          output.write("ENTRY=")
+          output.write(f"{entry['created_at']}__{entry['version']}")
+          output.write("\n")
+
+          output.write("CREATED_ENTRY=")
+          output.write(entry["created_at"])
+          output.write("\n")

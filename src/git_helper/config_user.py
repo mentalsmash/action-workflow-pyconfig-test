@@ -16,12 +16,18 @@
 import subprocess
 from pathlib import Path
 
+from cli_helper.log import log
+
 def config_user(clone_dir: Path, user: tuple[str, str], config_global: bool=False) -> None:
   user_name, user_email = user
-  subprocess.run([
+  cmd = [
     "git", "config", *(["--global"] if config_global else []), "user.name", user_name
-  ], check=True, cwd=clone_dir)
-  subprocess.run([
+  ]
+  log.command(cmd)
+  subprocess.run(cmd, check=True, cwd=clone_dir)
+  cmd = [
     "git", "config", *(["--global"] if config_global else []), "user.email", user_email
-  ], check=True, cwd=clone_dir)
+  ]
+  log.command(cmd)
+  subprocess.run(cmd, check=True, cwd=clone_dir)
 

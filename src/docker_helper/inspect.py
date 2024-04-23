@@ -17,31 +17,37 @@ import subprocess
 import json
 from pathlib import Path
 
+from cli_helper.log import log
+
 def inspect(
     images: str,
     output: str,
 ) -> None:
   images = [img.strip() for img in images.strip().splitlines()]
-  images = {}
-  layers = {}
+  log.debug("inspecting {} docker images", len(images))
+  r_images = {}
+  r_layers = {}
   for img in images:
-    result = subprocess.run([
+    cmd = [
       "docker", "buildx", "imagetools", "inspect", img, "--raw"
-    ], stdout=subprocess.PIPE, check=True)
-    images[img] = json.loads(result.stdout.decode())
-    for img_manifest in images[img].manifests:
+    ]
+    log.command(cmd)
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+    stdout = result.stdout.decode().strip()
+    r_images[img] = json.loads(stdout)
+    for img_manifest in r_images[img]["manifests"]:
       layer_digest = img_manifest["digest"]
-      layer_images = layers[layer_digest] = layers.get(layer_digest, set())
+      layer_images = r_layers[layer_digest] = r_layers.get(layer_digest, set())
       layer_images.add(img)
   result = {
-    "images": images,
+    "images": r_images,
     "layers": {
       layer: list(images)
-      for layer, images in layers.items()
+      for layer, images in r_layers.items()
     },
   }
-  output = Path(output.strip())
+  output = Path(str(output).strip())
   output.parent.mkdir(exist_ok=True, parents=True)
   with output.open("w") as outstream:
-    outstream.write(json.dumps(result))
+    outstream.write(json.dumps(result, indent=2))
 

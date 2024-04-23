@@ -6,7 +6,7 @@ from functools import partial
 from .data_object import DataObject, parse, build
 from .gh_api import gh_api
 from .fzf import fzf_filter
-from .log import log
+from cli_helper.log import log
 
 ###############################################################################
 # GitHub PackageVersion data object (parsed from query result)

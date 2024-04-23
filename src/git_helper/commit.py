@@ -16,23 +16,23 @@
 import subprocess
 from pathlib import Path
 
+from cli_helper.log import log
+
+from .config_user import config_user
+
 def commit(clone_dir: Path, message: str, user: tuple[str, str] | None = None, untracked: list[Path] | None = None, push: bool=True) -> None:
   if user:
-    user_name, user_email = user
-    subprocess.run([
-      "git", "config", "--global", "user.name", user_name
-    ], check=True, cwd=clone_dir)
-    subprocess.run([
-      "git", "config", "--global", "user.email", user_email
-    ], check=True, cwd=clone_dir)
-  for file in untracked:
-    subprocess.run([
-      "git", "add", file
-    ], check=True, cwd=clone_dir)
-  subprocess.run([
-    "git", "commit", "-am", message,
-  ], check=True, cwd=clone_dir)
+    config_user(clone_dir, user, config_global=False)
+
+  for file in (untracked or []):
+    cmd = ["git", "add", file]
+    log.command(cmd)
+    subprocess.run(cmd, check=True, cwd=clone_dir)
+
+  cmd = ["git", "commit", "-am", message,]
+  log.command(cmd)
+  subprocess.run(cmd, check=True, cwd=clone_dir)
   if push:
-    subprocess.run([
-      "git", "push",
-    ], check=True, cwd=clone_dir)
+    cmd = ["git", "push",]
+    log.command(cmd)
+    subprocess.run(cmd, check=True, cwd=clone_dir)

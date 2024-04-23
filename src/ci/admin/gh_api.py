@@ -2,7 +2,7 @@ import json
 import subprocess
 from itertools import chain
 
-from .log import log
+from cli_helper.log import log
 
 # GitHub API documentation: https://docs.github.com/en/rest/reference/packages
 GitHubApiAccept = "application/vnd.github.v3+json"
