@@ -490,7 +490,7 @@ tracks:
       prunable_versions = sys.stdin.readlines()
     if not prunable_versions:
       log.warning("[{}] no prunable versions specified nor detected", track)
-      return tuple([], [])
+      return ([], [])
 
     log.info("[{}] scanning for prunable docker layer with {} prunabel versions", track, len(prunable_versions))
     for vid in sorted(prunable_versions):
