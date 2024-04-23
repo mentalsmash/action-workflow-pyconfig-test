@@ -11,12 +11,12 @@ on:
     branches:
       - master
     paths:
-      - docker/debian-builder/**
-      - .github/workflows/image_build_debian_builder.yml
-      - .github/workflows_pyconfig/settings.*
+      - dockerfiles/debian-builder/**
+      - .github/workflows/docker_build_debian_builder.yml
+      - .pyconfig/settings.*
 
 concurrency:
-  group: image-build-debian-builder
+  group: docker-build-debian-builder
   cancel-in-progress: true
 
 permissions:

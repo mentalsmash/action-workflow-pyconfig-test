@@ -11,12 +11,12 @@ on:
     branches:
       - master
     paths:
-      - docker/admin/**
-      - .github/workflows/image_build_admin.yml
-      - .github/workflows_pyconfig/settings.*
+      - dockerfiles/admin/**
+      - .github/workflows/docker_build_admin.yml
+      - .pyconfig/settings.*
 
 concurrency:
-  group: image-build-admin
+  group: docker-build-admin
   cancel-in-progress: true
 
 permissions:
