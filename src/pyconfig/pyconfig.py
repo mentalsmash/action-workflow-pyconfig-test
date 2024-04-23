@@ -344,9 +344,28 @@ def dynamic_output(
 ###############################################################################
 #
 ###############################################################################
-def summarize(clone_dir: Path, config_dir: Path, workflow: str, github: str, inputs: str | None = None):
+def summarize(clone_dir: Path, config_dir: Path, workflow: str, github: str, inputs: str | None = None, output: str | None = None):
   github, inputs, cfg, workflow_mod = configuration(clone_dir, config_dir, github, inputs, workflow=workflow)
   summary = workflow_mod.summarize(clone_dir=clone_dir, github=github, inputs=inputs, cfg=cfg)
-  with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as output:
+  if output:
+    output = Path(output)
+  else:
+    output = Path(os.environ["GITHUB_STEP_SUMMARY"])
+  with output.open("a") as output:
     output.write(summary)
     output.write("\n")
+
+
+###############################################################################
+#
+###############################################################################
+def summarize_settings(clone_dir: Path, config_dir: Path, cfg: dict, workflow: str, github: str, inputs: str | None = None) -> str:
+  result = [
+    "# Workflow Configuration ",
+    "",
+    "| Parameter | Value |",
+    "|-----------|-------|",
+
+  ]
+
+  return "\n".join(result)

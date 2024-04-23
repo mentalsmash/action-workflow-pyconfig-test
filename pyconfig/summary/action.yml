@@ -24,6 +24,11 @@ inputs:
     description: The workflow's `inputs` context as a JSON string.
     required: false
     default: ''
+  output:
+    description: Save generated summary to a file instead of writing it to step summary.
+    required: false
+    default: ''
+
 outputs:
   settings:
     description: The loaded settings in JSON format.
@@ -45,13 +50,15 @@ runs:
         sys.path.insert(0, str(src_dir))
         from pyconfig import summarize
 
-        workflow = "${{ inputs.workflow }}"
-        clone_dir = Path("${{ inputs.clone-dir }}")
+        workflow = "${{ inputs.workflow }}".strip()
+        clone_dir = Path("${{ inputs.clone-dir }}".strip())
         config_dir = clone_dir / "${{ inputs.path }}"
-        github = """${{ inputs.github }}"""
+        github = """${{ inputs.github }}""".strip()
         if not github:
-          github = """${{ toJson(github) }}"""
-        inputs = """${{ inputs.inputs }}"""
+          github = """${{ toJson(github) }}""".strip()
+        inputs = """${{ inputs.inputs }}""".strip()
+        output = "${{ inputs.output }}".strip()
+
         sys.path.insert(0, str(config_dir))
 
         summarize(
@@ -59,4 +66,5 @@ runs:
           clone_dir=clone_dir,
           config_dir=config_dir,
           github=github if github else None,
-          inputs=inputs if inputs else None)
+          inputs=inputs if inputs else None,
+          output=output if output else NOne)

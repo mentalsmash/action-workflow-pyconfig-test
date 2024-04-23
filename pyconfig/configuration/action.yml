@@ -31,6 +31,10 @@ inputs:
     description: A JSON file with the final configuration.
     required: false
     default: pyconfig.json
+  summarize:
+    description: Generate a step summary with the loaded configuration
+    required: false
+    default: ''
 
 # outputs:
 #   settings:
@@ -50,7 +54,7 @@ runs:
         from pathlib import Path
         src_dir = Path("${{ github.action_path }}").parent.parent / "src"
         sys.path.insert(0, str(src_dir))
-        from pyconfig import configuration
+        from pyconfig import configuration, summarize_settings
 
         workflow = "${{ inputs.workflow }}"
 
@@ -82,3 +86,13 @@ runs:
           output.write("EOF\n")
 
         Path("${{ inputs.output }}").write_text(cfg_json)
+
+        if "${{ inputs.summarize }}":
+          Path(os.environ["GITHUB_STEP_SUMMARY"]).open("w") as output:
+            output.write(summarize_settings(
+              clone_dir=clone_dir,
+              config_dir=config_dir,
+              cfg=cfg,
+              github=github if github else None,
+              inputs=inputs if inputs else None,
+              workflow=workflow if workflow else None))

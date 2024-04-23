@@ -17,7 +17,6 @@ inputs:
     required: true
   version:
     description: The version for the release
-    required: true
   created_at:
     description: The release timestamp. Any release matching the version will be deleted if unspecified.
   match-re:

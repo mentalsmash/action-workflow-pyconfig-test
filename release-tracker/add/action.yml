@@ -44,6 +44,10 @@ inputs:
   push:
     description: Push new commit to remote repository. Set to empty to disable.
     default: yes
+  summary:
+    description: A JSON file that will be created with a JSON summary of the created entry
+    default: release-tracker-summary.json
+
 
 outputs:
   entry:

@@ -17,7 +17,6 @@ inputs:
     required: true
   version:
     description: A unique version id for the release
-    required: true
   created_at:
     description: Timestamp for the release.
   match-re:
