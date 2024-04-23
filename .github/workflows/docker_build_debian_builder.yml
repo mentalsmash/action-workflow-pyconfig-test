@@ -69,6 +69,12 @@ jobs:
         base-image: ${{ fromJson(needs.config.outputs.DEB_BUILDER_IMAGE_BASE_IMAGES_MATRIX) }}
     runs-on: ubuntu-latest
     steps:
+      - name: Clone source repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.CLONE_DIR }}
+          submodules: true
+
       - name: Build image
         uses: mentalsmash/actions/docker/builder@master
         with:
