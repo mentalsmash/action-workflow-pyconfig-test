@@ -40,6 +40,8 @@ inputs:
     default: yes
   tracks:
     description: Release tracks configuration
+  token:
+    description: The authentication token to access the repository
 
 runs:
   using: "composite"
@@ -59,9 +61,20 @@ runs:
           path="${{ inputs.path }}",
           storage="${{ inputs.storage }}")
 
+        # tracker.initialize(
+        #   tracks="""
+        #     ${{ inputs.tracks }}
+        #   """,
+        #   commit=bool("${{ inputs.commit }}"),
+        #   push=bool("${{ inputs.push }}"))
+
         tracker.initialize(
           tracks="""
             ${{ inputs.tracks }}
-          """,
-          commit=bool("${{ inputs.commit }}"),
-          push=bool("${{ inputs.push }}"))
+          """)
+    
+    - name: Commit & Push
+      uses: actions-js/push@master
+      with:
+        github_token: ${{ inputs.token }}
+        directory: ${{ inputs.path }}
