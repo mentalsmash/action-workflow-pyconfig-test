@@ -48,4 +48,4 @@ runs:
           storage="${{ inputs.storage }}")
 
         tracker.configure_clone(
-          user=("${{ inputs.repository-user-name }}", "${{ inputs.repository-user-email }}"),)
+          user=("${{ inputs.user-name }}", "${{ inputs.user-email }}"),)
