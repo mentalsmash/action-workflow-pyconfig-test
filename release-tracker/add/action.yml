@@ -101,7 +101,7 @@ runs:
           output.write("\n")
 
         print("::group::New Release")
-        print(yaml.safe_dump(entry))
+        print(yaml.safe_dump(summary))
         print("::endgroup::")
 
         import os
