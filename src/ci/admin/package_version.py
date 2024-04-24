@@ -33,6 +33,7 @@ class PackageVersion(NamedTuple):
     package: str,
     org: str | None = None,
     filter: str | None = None,
+    tags: list[str] | None = None,
     package_type: str = "container",
     prompt: str | None = None,
     noninteractive: bool = False,
@@ -63,7 +64,7 @@ class PackageVersion(NamedTuple):
 
     if versions is None:
       versions = list(_ls_versions())
-    
+
     package_label = package if not org else f"{org}/{package}"
 
     if not versions:
@@ -72,6 +73,14 @@ class PackageVersion(NamedTuple):
 
     if prompt is None:
       prompt = f"available versions for {package}"
+    tags = tags or []
+    tags_filter = " ".join([
+      f"'{tag}'" for tag in tags
+    ]) if tags else ""
+
+    filter = filter or ""
+    filter = f"{filter}{' ' + tags_filter if tags_filter else ''}"
+
     sort_versions = partial(sorted, key=lambda p: p.updated_at)
     fzf = fzf_filter(
       filter=filter,

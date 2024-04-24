@@ -62,9 +62,7 @@ runs:
         stdout = StringIO()
         sys.stdout = stdout
         Admin.run(
-          args = """
-            ${{ inputs.args }}
-          """,
+          args = """${{ inputs.args }}""",
           image = "${{ inputs.image }}",
           cwd = "${{ inputs.cwd }}",
           token = "${{ inputs.token }}")

@@ -49,11 +49,9 @@ def _log_warning(*args, **print_args) -> None:
 
 
 def _log_command(cmd: list[str], shell: bool = False, check: bool = False, **print_args) -> None:
-  import shlex
-
   if shell:
     cmd = ["sh", f"-{'e' if check else ''}c", *cmd]
-  _log_debug("+ " + " ".join(["{}"] * len(cmd)), *(map(shlex.quote, map(str, cmd))), **print_args)
+  _log_debug("+ " + " ".join(["{}"] * len(cmd)), *(map(str, cmd)), **print_args)
 
 
 class LogFunction(Protocol):

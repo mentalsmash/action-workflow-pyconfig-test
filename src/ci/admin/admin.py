@@ -101,7 +101,7 @@ class Admin:
       elif args.action == "select-packages":
         cls.select_packages(org=args.org, filter=args.filter)
       elif args.action == "select-versions":
-        cls.select_versions(package=args.package, org=args.org, filter=args.filter)
+        cls.select_versions(package=args.package, org=args.org, filter=args.filter, tags=args.tag)
       elif args.action == "delete-versions":
         cls.delete_versions(
           package=args.package,
@@ -301,6 +301,10 @@ class Admin:
       help="Custom zfz filter to run in unattended mode.",
       default=None,
     )
+    parser_ls_versions.add_argument("-t", "--tag",
+      help="Filter versions based on tags",
+      default=[],
+      action="append")
 
     parser_delete_versions = subparsers.add_parser(
       "delete-versions",
@@ -396,9 +400,9 @@ class Admin:
       output(str(pkg))
 
   @classmethod
-  def select_versions(cls, org, package, filter) -> None:
+  def select_versions(cls, org, package, filter, tags) -> None:
     tabulate_columns(*PackageVersion._fields)
-    for version in PackageVersion.select(package=package, org=org, filter=filter):
+    for version in PackageVersion.select(package=package, org=org, filter=filter, tags=tags):
       output(str(version))
 
   @classmethod
