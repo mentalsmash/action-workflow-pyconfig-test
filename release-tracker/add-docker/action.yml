@@ -24,6 +24,9 @@ inputs:
   images:
     description: A newline-separated list of images included in the release.
     required: true
+  hashes:
+    description: Hashes for the images. Newline-separated list in the form `IMAGE=HASH`.
+    required: true
   commit:
     description: Commit changes to the local repository. Set to empty to disable.
     default: yes
@@ -66,6 +69,16 @@ runs:
 
         track = "${{ inputs.track }}".strip()
 
+
+        hashes = """${{ inputs.hashes }}""".strip()
+        hashes = {
+          img: img_hash
+          for pair in hashes.splitlines()
+          for img, img_hash in  pair.split("=")
+          for img in [img.strip()]
+          for img_hash in [img_hash.strip()]
+        }
+
         entry = tracker.add_docker(
           track=track,
           version="${{ inputs.version }}",
@@ -73,6 +86,7 @@ runs:
           images="""
             ${{ inputs.images }}
           """,
+          hashes=hashes,
           commit=bool("${{ inputs.commit }}"),
           push=bool("${{ inputs.push }}"))
 

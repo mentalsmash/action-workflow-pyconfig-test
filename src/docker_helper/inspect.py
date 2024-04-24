@@ -21,8 +21,10 @@ from cli_helper.log import log
 
 def inspect(
     images: str,
+    hashes: dict[str, str],
     output: str,
 ) -> None:
+  hashes = hashes or {}
   images = [img.strip() for img in images.strip().splitlines()]
   log.debug("inspecting {} docker images", len(images))
   r_images = {}
@@ -35,6 +37,11 @@ def inspect(
     result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
     stdout = result.stdout.decode().strip()
     r_images[img] = json.loads(stdout)
+    img_hash = hashes.get(img)
+    r_images[img]["manifest_hash"] = img_hash or ""
+    if img_hash:
+      layer_images = r_layers[img_hash] = r_layers.get(img_hash, set())
+      layer_images.add(img)
     for img_manifest in r_images[img]["manifests"]:
       layer_digest = img_manifest["digest"]
       layer_images = r_layers[layer_digest] = r_layers.get(layer_digest, set())

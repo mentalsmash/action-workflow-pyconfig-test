@@ -396,13 +396,14 @@ tracks:
       track: str,
       version: str,
       images: str,
+      hashes: str,
       created_at: str | None = None,
       commit: bool = False,
       push: bool = False) -> dict:
     tmp_h = tempfile.TemporaryDirectory()
     tmp_dir = Path(tmp_h.name)
     manifest = tmp_dir / "docker-manifests.json"
-    inspect_docker(images, manifest)
+    inspect_docker(images, hashes, manifest)
     return self.add(
       track=track,
       version=version,
@@ -470,7 +471,6 @@ tracks:
       if not docker_manifests_f.exists():
         log.debug("[{}][{}] not a docker release", track, version_id)
         return set()
-
       docker_manifests = json.loads(docker_manifests_f.read_text())
       return set(docker_manifests["layers"].keys())
 
