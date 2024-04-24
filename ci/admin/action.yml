@@ -22,6 +22,9 @@ inputs:
     description: DockerHub login token
   dockerhub-user:
     description: DockerHub user
+  output:
+    description: Dump stdout to a file
+    default: ci-admin.log
 
 runs:
   using: "composite"
@@ -41,10 +44,13 @@ runs:
         username: ${{ inputs.dockerhub-user }}
         password: ${{ inputs.dockerhub-token }}
 
-    - name: "Run ci-admin"
+    - name: "Run ci-admin script"
       shell: python
+      id: ci-admin
       run: |
+        import os
         import sys
+        from io import StringIO
         from pathlib import Path
         action_dir = Path("${{ github.action_path }}")
         repo_dir = action_dir.parent.parent
@@ -53,6 +59,8 @@ runs:
         from ci.admin import Admin
         print("::add-mask::${{ inputs.token }}")
         print("::group::ci-admin output")
+        stdout = StringIO()
+        sys.stdout = stdout
         Admin.run(
           args = """
             ${{ inputs.args }}
@@ -60,4 +68,12 @@ runs:
           image = "${{ inputs.image }}",
           cwd = "${{ inputs.cwd }}",
           token = "${{ inputs.token }}")
+        sys.stdout = sys.__stdout__
+        stdout = stdout.getvalue()
+        print(stdout)
         print("::endgroup::")
+
+        output = "${{ inputs.output }}".strip()
+        if output:
+          with Path(output).open("w") as output:
+            output.write(stdout)
