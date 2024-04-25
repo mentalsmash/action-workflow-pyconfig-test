@@ -73,7 +73,7 @@ runs:
         print("::endgroup::")
 
         output = "${{ inputs.output }}".strip()
-        if output:
+        if output and stdout:
           with Path(output).open("w") as output:
             output.write(stdout)
           
