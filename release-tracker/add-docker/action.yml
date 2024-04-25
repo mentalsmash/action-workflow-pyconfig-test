@@ -69,15 +69,16 @@ runs:
 
         track = "${{ inputs.track }}".strip()
 
-
-        hashes = """${{ inputs.hashes }}""".strip()
-        hashes = {
-          img: img_hash
-          for pair in hashes.splitlines() if pair
-          for img, img_hash in  pair.split("=")
-          for img in [img.strip()] if img
-          for img_hash in [img_hash.strip()] if img_hash
-        }
+        hashes = {}
+        for pair in """${{ inputs.hashes }}""".strip().splitlines():
+          pair = pair.strip()
+          if not pair:
+            continue
+          print(f"PARSING HASH PAIR: '{pair}'")
+          for img, img_hash in  pair.split("="):
+            img = img.strip()
+            img_hash = img_hash.strip()
+            hashes[img] = img_hash
 
         entry = tracker.add_docker(
           track=track,
