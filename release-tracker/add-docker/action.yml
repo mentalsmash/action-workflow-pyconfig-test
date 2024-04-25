@@ -73,10 +73,10 @@ runs:
         hashes = """${{ inputs.hashes }}""".strip()
         hashes = {
           img: img_hash
-          for pair in hashes.splitlines()
+          for pair in hashes.splitlines() if pair
           for img, img_hash in  pair.split("=")
-          for img in [img.strip()]
-          for img_hash in [img_hash.strip()]
+          for img in [img.strip()] if img
+          for img_hash in [img_hash.strip()] if img_hash
         }
 
         entry = tracker.add_docker(
