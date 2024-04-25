@@ -74,11 +74,10 @@ runs:
           pair = pair.strip()
           if not pair:
             continue
-          print(f"PARSING HASH PAIR: '{pair}'")
-          for img, img_hash in  pair.split("="):
-            img = img.strip()
-            img_hash = img_hash.strip()
-            hashes[img] = img_hash
+          img, img_hash =  pair.split("="):
+          img = img.strip()
+          img_hash = img_hash.strip()
+          hashes[img] = img_hash
 
         entry = tracker.add_docker(
           track=track,
