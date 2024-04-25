@@ -74,7 +74,7 @@ runs:
           pair = pair.strip()
           if not pair:
             continue
-          img, img_hash =  pair.split("="):
+          img, img_hash =  pair.split("=")
           img = img.strip()
           img_hash = img_hash.strip()
           hashes[img] = img_hash
