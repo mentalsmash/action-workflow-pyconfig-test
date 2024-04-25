@@ -50,24 +50,24 @@ runs:
       run: |
         import os
         import sys
-        from io import StringIO
         from pathlib import Path
+
         action_dir = Path("${{ github.action_path }}")
         repo_dir = action_dir.parent.parent
         src_dir = repo_dir / "src"
         sys.path.insert(0, str(src_dir))
+
         from ci.admin import Admin
+
         print("::add-mask::${{ inputs.token }}")
-        print("::group::ci-admin output")
-        stdout = StringIO()
-        sys.stdout = stdout
-        Admin.run(
+
+        stdout = Admin.run(
           args = """${{ inputs.args }}""",
           image = "${{ inputs.image }}",
           cwd = "${{ inputs.cwd }}",
           token = "${{ inputs.token }}")
-        sys.stdout = sys.__stdout__
-        stdout = stdout.getvalue()
+
+        print("::group::ci-admin output")
         print(stdout)
         print("::endgroup::")
 
@@ -75,3 +75,4 @@ runs:
         if output:
           with Path(output).open("w") as output:
             output.write(stdout)
+          
