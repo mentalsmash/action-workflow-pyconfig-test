@@ -65,7 +65,8 @@ runs:
           args = """${{ inputs.args }}""",
           image = "${{ inputs.image }}",
           cwd = "${{ inputs.cwd }}",
-          token = "${{ inputs.token }}")
+          token = "${{ inputs.token }}",
+          capture_output=True)
 
         print("::group::ci-admin output")
         print(stdout)
