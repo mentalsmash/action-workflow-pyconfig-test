@@ -22,12 +22,24 @@ import argparse
 import tempfile
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+from typing import NamedTuple
+from enum import Enum
 
 from git_helper import commit as git_commit, config_user as git_config_user
 from docker_helper import inspect as inspect_docker
 from cli_helper.log import log
 from cli_helper.inline_yaml import inline_yaml_load
-from ci.admin import Admin
+
+class PrunePolicy(Enum):
+  LATEST = 0
+  UNIQUE = 1
+
+
+class ReleaseTrack(NamedTuple):
+  name: str
+  prune_policy: PrunePolicy
+  prune_max_age: int
+
 
 class ReleaseTracker:
   TracksConfigFile = "tracks.yml"
@@ -286,17 +298,36 @@ tracks:
     self.storage = self.path / storage.strip()
     self._release_logs = {}
     tracks_yml = self.storage / self.TracksConfigFile
-    self.tracks = (
+    self.tracks: dict[str, ReleaseTrack] = (
       {} if not tracks_yml.exists()
-      else yaml.safe_load(tracks_yml.read_text())
+      else self.load_tracks(yaml.safe_load(tracks_yml.read_text()))
     )
+
+  @classmethod
+  def load_tracks(cls, tracks: list[dict]) -> dict:
+    return {
+      t["name"]: {
+        ReleaseTrack(
+          name=t["name"],
+          prune_policy=PrunePolicy[t.get("prune-policy", "unique").upper()],
+          prune_max_age=t.get("prune-max-age", 0))
+      } for t in tracks
+    }
+
+  @classmethod
+  def serialize_tracks(cls, tracks: dict[str, ReleaseTrack]) -> list[dict]:
+    return {
+      "tracks": [
+        {
+          "name": t.name,
+          "prune-policy": t.prune_policy.name.lower(),
+          "prune-max-age": t.prune_max_age,
+        } for t in sorted(tracks.values(), key=lambda t: t.name)
+      ]
+    }
 
   def configure_clone(self, user: tuple[str, str]):
     git_config_user(clone_dir=self.path, user=user)
-
-
-  def track_config(self, track: str) -> dict:
-    return next(t for t in self.tracks["tracks"] if t["name"] == track)
 
   def initialize(self,
       project_repo: str,
@@ -307,17 +338,17 @@ tracks:
     tracks = tracks.strip()
     if not tracks:
       tracks = self.DefaultTracks
-    self.tracks = yaml.safe_load(tracks)
+    self.tracks = self.load_tracks(yaml.safe_load(tracks))
 
     # Create base directory and write tracks.yml
     self.storage.mkdir(exist_ok=True, parents=True)
 
     tracks_yml = self.storage / self.TracksConfigFile
-    tracks_yml.write_text(yaml.safe_dump(self.tracks))
+    tracks_yml.write_text(self.serialize_tracks(self.tracks))
 
     # Initialize track directories
-    for track in self.tracks["tracks"]:
-      track_dir = self.storage / track["name"]
+    for track in self.tracks.keys():
+      track_dir = self.storage / track.name
       track_dir.mkdir(exist_ok=True)
       track_log = track_dir / self.ReleaseLogFile
       track_log.write_text(json.dumps([]))
@@ -435,17 +466,15 @@ tracks:
         for vid in [self.version_id(version["created_at"], version["version"])]
       })
 
-    track_cfg = self.track_config(track)
-    prune_policy = track_cfg.get("prune-policy", "unique") 
-    log.info("[{}] pruning with policy: {}", track, prune_policy)
-    if prune_policy == "unique":
+    track_cfg = self.tracks[track]
+    log.info("[{}] pruning with policy: {}", track, track_cfg.prune_policy)
+    if track_cfg.prune_policy == "unique":
       prunable = _find_prunable_unique()
     else:
       prunable = _find_prunable_latest()
     
-    max_age = track_cfg.get("prune-max-age", 0)
-    if max_age > 0:
-      max_age = timedelta(days=max_age)
+    if track_cfg.prune_max_age > 0:
+      max_age = timedelta(days=track_cfg.prune_max_age)
       old_enough = []
       now = datetime.now()
       for version_id in prunable:
@@ -469,7 +498,7 @@ tracks:
       return set(docker_manifests["layers"].keys())
 
     prunable_versions = {}
-    for track in self.tracks["tracks"].keys():
+    for track in self.tracks.keys():
       track_versions = self.find_prunable(track)
       if not track_versions:
         log.warning("[{}] no prunable versions specified nor detected", track)
