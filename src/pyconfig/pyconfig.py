@@ -24,15 +24,17 @@ from typing import NamedTuple
 ###############################################################################
 #
 ###############################################################################
-def dict_to_tuple(key: str, val: dict) -> NamedTuple:
+def dict_to_tuple(key: str, val: dict, bool_to_str: bool=False) -> NamedTuple:
   fields = {}
   for k, v in val.items():
     if k.startswith("_"):
       # field unsupported by namedtuple
       continue
+    k = k.replace("-", "_").replace("/", "_")
     if isinstance(v, dict):
       v = dict_to_tuple(k, v)
-    k = k.replace("-", "_").replace("/", "_")
+    elif isinstance(v, bool) and bool_to_str:
+      v = k if v else ''
     fields[k] = v
 
   keys = list(fields.keys())
@@ -214,8 +216,9 @@ def configuration(
   config_dir: Path,
   github: str,
   inputs: str | None = None,
+  workflow: str | None = None,
   as_tuple: bool = True,
-  workflow: str | None = None
+  bool_to_str: bool = False,
 ) -> tuple[tuple, tuple, tuple | dict, object | None]:
 
   def _json_load(val: str):
@@ -300,7 +303,7 @@ def configuration(
   else:
     workflow_mod = None
 
-  return github, inputs, (dict_to_tuple("settings", cfg_dict) if as_tuple else cfg_dict), workflow_mod
+  return github, inputs, (dict_to_tuple("settings", cfg_dict, bool_to_str=bool_to_str) if as_tuple else cfg_dict), workflow_mod
 
 
 ###############################################################################

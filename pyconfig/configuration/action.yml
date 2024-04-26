@@ -75,7 +75,8 @@ runs:
           github=github if github else None,
           inputs=inputs if inputs else None,
           workflow=workflow if workflow else None,
-          as_tuple=False)
+          as_tuple=False,
+          bool_to_str=True)
 
         cfg_json = json.dumps(cfg, indent=2)
 
