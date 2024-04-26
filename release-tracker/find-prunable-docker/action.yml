@@ -12,9 +12,6 @@ inputs:
   storage:
     description: Subdirectory within the repository the tracking files are stored.
     default: releases
-  track:
-    description: The track for the new release
-    required: true
   version:
     description: A unique version id for the release
   created_at:
