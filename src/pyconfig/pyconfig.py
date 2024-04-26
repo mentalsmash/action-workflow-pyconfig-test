@@ -68,6 +68,7 @@ def dict_bool_to_str(val: dict) -> dict:
       val[k] = k if v else ''
     elif isinstance(v, dict):
       val[k] = dict_bool_to_str(v)
+  return val
 
 
 ###############################################################################
