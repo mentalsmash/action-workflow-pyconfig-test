@@ -125,7 +125,7 @@ class Admin:
             for line in [line.strip()]
             if line
           ]
-        else:
+        elif args.required:
           if args.required == "-":
             def _required():
               return sys.stdin.readlines()
@@ -139,7 +139,9 @@ class Admin:
             if line
           ]
           prunable_names = [v.name for v in all if v.name not in required_names]
-        
+        else:
+          raise RuntimeError("one of --prunable or --required is required")
+
         prunable = [pkg for pkg in all if pkg.name in prunable_names]
 
         tabulate_columns(*PackageVersion._fields)
@@ -336,7 +338,7 @@ class Admin:
     #   default=None,
     #   type=float,
     # )
-    mut_opts = parser_prune_versions.add_mutually_exclusive_group(required=True)
+    mut_opts = parser_prune_versions.add_mutually_exclusive_group()
 
     mut_opts.add_argument("-P", "--prunable",
       help="A file with a list of prunable versions or - to read it from stdin",
