@@ -59,11 +59,7 @@ runs:
         (prunable_versions,
          prunable_layers,
          unprunable_versions,
-         unprunable_layers)= tracker.find_prunable_docker_layers(
-          track="${{ inputs.track }}",
-          prunable_versions="""
-            ${{ inputs.prunable-versions }}
-          """)
+         unprunable_layers)= tracker.find_prunable_docker_layers()
         
         print("::group::Prunable Layers")
         for layer in prunable_layers:

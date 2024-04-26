@@ -195,16 +195,9 @@ tracks:
     )
 
 
-    parser_find_prunable_docker = subparsers.add_parser(
+    _parser_find_prunable_docker = subparsers.add_parser(
       "find-prunable-docker", help=""
     )
-    parser_find_prunable_docker.add_argument("-t", "--track",
-      help="Target release track",
-      required=True)
-    parser_find_prunable_docker.add_argument("-p", "--prunable-version",
-      help="Mark version as prunable to preserve it. Use - to read the list from stdin. Leave empty to determine the list of prunable versions automatically.",
-      default=[],
-      action="append")
 
     return parser
 
@@ -266,9 +259,7 @@ tracks:
       (prunable_versions,
        prunable_layers,
        unprunable_versions,
-       unprunable_layers) = tracker.find_prunable_docker_layers(
-        track=args.track,
-        prunable_versions="\n".join(args.prunable_version))
+       unprunable_layers) = tracker.find_prunable_docker_layers()
       for layer in prunable_layers:
         print("-", layer)
       for layer in unprunable_layers:
@@ -467,56 +458,41 @@ tracks:
     return prunable
 
 
-  def find_prunable_docker_layers(self,
-      track: str,
-      prunable_versions: str) -> tuple[list[str], list[str]]:
-    def _load_layers(version_id: str) -> list[str]:
+  def find_prunable_docker_layers(self) -> tuple[list[str], list[str]]:
+    def _load_layers(track_dir: Path, version_id: str) -> list[str]:
       version_dir = track_dir / version_id
       docker_manifests_f = version_dir / "docker-manifests.json"
       if not docker_manifests_f.exists():
-        log.debug("[{}][{}] not a docker release", track, version_id)
+        log.debug("[{}][{}] not a docker release", version_id)
         return set()
       docker_manifests = json.loads(docker_manifests_f.read_text())
       return set(docker_manifests["layers"].keys())
 
-    def _parse_prunable_versions(versions: str) -> list[str]:
-      return [
-        vid
-        for vid in versions.strip().splitlines()
-        for vid in [vid.strip()]
-        if vid
-      ]
-    
-    prunable_versions = _parse_prunable_versions(prunable_versions)
-    if not prunable_versions:
-      prunable_versions = self.find_prunable(track)
-    elif "-" in prunable_versions:
-      log.debug("reading prunable versions from stdin")
-      prunable_versions = sys.stdin.readlines()
-    if not prunable_versions:
-      log.warning("[{}] no prunable versions specified nor detected", track)
-      return ([], [])
-
-    log.info("[{}] scanning for prunable docker layer with {} prunabel versions", track, len(prunable_versions))
-    for vid in sorted(prunable_versions):
-      log.info("[{}] - {}", track, vid)
+    prunable_versions = {}
+    for track in self.tracks["tracks"].keys():
+      track_versions = self.find_prunable(track)
+      if not track_versions:
+        log.warning("[{}] no prunable versions specified nor detected", track)
+        continue
+      prunable_versions[track] = track_versions
 
     prunable_docker_versions = set()
     unprunable_layers = set()
     unprunable_docker_versions = set()
 
-    track_dir = self.storage / track
-    for version_entry in self.release_log(track):
-      version_id = self.version_id(version_entry["created_at"], version_entry["version"])
-      v_layers = _load_layers(version_id)
-      if not v_layers:
-        continue
-      log.debug("[{}][{}] inspecting version ({} layers)", track, version_id, len(v_layers))
-      if version_id not in prunable_versions:
-        unprunable_layers = unprunable_layers | v_layers
-        unprunable_docker_versions.add(version_id)
-      else:
-        prunable_docker_versions.add(version_id)
+    for track, track_versions in prunable_versions.items():
+      track_dir = self.storage / track
+      for version_entry in self.release_log(track):
+        version_id = self.version_id(version_entry["created_at"], version_entry["version"])
+        v_layers = _load_layers(track_dir, version_id)
+        if not v_layers:
+          continue
+        log.debug("[{}][{}] inspecting version ({} layers)", track, version_id, len(v_layers))
+        if version_id not in prunable_versions:
+          unprunable_layers = unprunable_layers | v_layers
+          unprunable_docker_versions.add(version_id)
+        else:
+          prunable_docker_versions.add(version_id)
     
     prunable_layers = {
       layer
