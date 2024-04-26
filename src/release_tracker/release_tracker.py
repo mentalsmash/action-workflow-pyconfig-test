@@ -306,12 +306,11 @@ tracks:
   @classmethod
   def load_tracks(cls, tracks: list[dict]) -> dict:
     return {
-      t["name"]: {
-        ReleaseTrack(
-          name=t["name"],
-          prune_policy=PrunePolicy[t.get("prune-policy", "unique").upper()],
-          prune_max_age=t.get("prune-max-age", 0))
-      } for t in tracks
+      t["name"]: ReleaseTrack(
+        name=t["name"],
+        prune_policy=PrunePolicy[t.get("prune-policy", "unique").upper()],
+        prune_max_age=t.get("prune-max-age", 0))
+      for t in tracks
     }
 
   @classmethod
