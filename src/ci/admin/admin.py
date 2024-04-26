@@ -110,25 +110,37 @@ class Admin:
           noop=args.noop,
           if_package_exists=args.if_package_exists)
       elif args.action == "prune-versions":
-        if args.prunable == "-":
-          def _input():
-            return sys.stdin.readlines()
+        all = PackageVersion.select(package=args.package, org=args.org)
+
+        if args.prunable:
+          if args.prunable == "-":
+            def _prunable():
+              return sys.stdin.readlines()
+          else:
+            def _prunable():
+              return Path(args.prunable).read_text().splitlines()
+          prunable_names = [
+            line
+            for line in _prunable()
+            for line in [line.strip()]
+            if line
+          ]
         else:
-          def _input():
-            return Path(args.prunable).read_text().splitlines()
+          if args.required == "-":
+            def _required():
+              return sys.stdin.readlines()
+          else:
+            def _required():
+              return Path(args.required).read_text().splitlines()
+          required_names = [
+            line
+            for line in _required()
+            for line in [line.strip()]
+            if line
+          ]
+          prunable_names = [v.name for v in all if v.name not in required_names]
         
-        prunable_names = [
-          line
-          for line in _input()
-          for line in [line.strip()]
-          if line
-        ]
-        prunable = [
-          pkg
-          for pkg in PackageVersion.select(
-            package=args.package,
-            org=args.org) if pkg.name in prunable_names
-        ]
+        prunable = [pkg for pkg in all if pkg.name in prunable_names]
 
         tabulate_columns(*PackageVersion._fields)
         for version in PackageVersion.delete(
@@ -324,8 +336,13 @@ class Admin:
     #   default=None,
     #   type=float,
     # )
-    parser_prune_versions.add_argument("-P", "--prunable",
-      help="List of prunable versions or - to read it from stdin",
+    mut_opts = parser_prune_versions.add_mutually_exclusive_group(required=True)
+
+    mut_opts.add_argument("-P", "--prunable",
+      help="A file with a list of prunable versions or - to read it from stdin",
+      required=True)
+    mut_opts.add_argument("-R", "--required",
+      help="A file with a list of unprunable versions or - to read it from stdin",
       required=True)
 
     parser_nightly_cleanup = subparsers.add_parser(

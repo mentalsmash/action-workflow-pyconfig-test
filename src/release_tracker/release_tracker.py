@@ -263,11 +263,16 @@ tracks:
         commit=args.commit,
         push=args.push)
     elif args.action == "find-prunable-docker":
-      prunable = tracker.find_prunable_docker_layers(
+      (prunable_versions,
+       prunable_layers,
+       unprunable_versions,
+       unprunable_layers) = tracker.find_prunable_docker_layers(
         track=args.track,
         prunable_versions="\n".join(args.prunable_version))
-      for pruned in prunable:
-          print(pruned)
+      for layer in prunable_layers:
+        print("-", layer)
+      for layer in unprunable_layers:
+        print("+", layer)
     elif args.action == "find-prunable":
       prunable = tracker.find_prunable(track=args.track)
       for pruned in prunable:
@@ -498,6 +503,7 @@ tracks:
 
     prunable_docker_versions = set()
     unprunable_layers = set()
+    unprunable_docker_versions = set()
 
     track_dir = self.storage / track
     for version_entry in self.release_log(track):
@@ -508,6 +514,7 @@ tracks:
       log.debug("[{}][{}] inspecting version ({} layers)", track, version_id, len(v_layers))
       if version_id not in prunable_versions:
         unprunable_layers = unprunable_layers | v_layers
+        unprunable_docker_versions.add(version_id)
       else:
         prunable_docker_versions.add(version_id)
     
@@ -518,8 +525,9 @@ tracks:
           if layer not in unprunable_layers
     }
     log.info("[{}] {} prunable layers from {} docker versions", track, len(prunable_docker_versions), len(prunable_layers))
+    log.info("[{}] {} unprunable layers from {} docker versions", track, len(unprunable_docker_versions), len(unprunable_layers))
     
-    return (prunable_versions, prunable_layers)
+    return (prunable_docker_versions, prunable_layers, unprunable_docker_versions, unprunable_layers)
 
 
   def release_log(self, track: str) -> list[dict]:

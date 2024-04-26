@@ -24,12 +24,18 @@ inputs:
       Match versions using a regular expression over the string "{created_at}__{version}".
       This feature is experimental, and you may run into "quote hell".
 outputs:
-  layers:
+  prunable-layers:
     description: List of prunable docker layers.
-    value: ${{ steps.find.outputs.LAYERS }}
-  versions:
+    value: ${{ steps.find.outputs.PRUNABLE_LAYERS }}
+  prunable-versions:
     description: List of prunable versions.
-    value: ${{ steps.find.outputs.VERSIONS }}
+    value: ${{ steps.find.outputs.PRUNABLE_VERSIONS }}
+  unprunable-layers:
+    description: List of prunable docker layers.
+    value: ${{ steps.find.outputs.UNPRUNABLE_LAYERS }}
+  unprunable-versions:
+    description: List of prunable versions.
+    value: ${{ steps.find.outputs.UNPRUNABLE_VERSIONS }}
 
 runs:
   using: "composite"
@@ -50,7 +56,10 @@ runs:
           path="${{ inputs.path }}",
           storage="${{ inputs.storage }}")
 
-        prunable_versions, prunable_layers = tracker.find_prunable_docker_layers(
+        (prunable_versions,
+         prunable_layers,
+         unprunable_versions,
+         unprunable_layers)= tracker.find_prunable_docker_layers(
           track="${{ inputs.track }}",
           prunable_versions="""
             ${{ inputs.prunable-versions }}
@@ -66,18 +75,40 @@ runs:
           print(vid)
         print("::endgroup::")
 
+        print("::group::Unprunable Layers")
+        for layer in unprunable_layers:
+          print(layer)
+        print("::endgroup::")
+
+        print("::group::Unprunable Versions")
+        for vid in unprunable_versions:
+          print(vid)
+        print("::endgroup::")
+
         import os
         from pathlib import Path
         
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
-          output.write("LAYERS<<EOF\n")
+          output.write("PRUNABLE_LAYERS<<EOF\n")
           for match in prunable_layers:
             output.write(match)
             output.write("\n")
           output.write("EOF\n")
 
-          output.write("VERSIONS<<EOF\n")
+          output.write("PRUNABLE_VERSIONS<<EOF\n")
           for match in prunable_versions:
+            output.write(match)
+            output.write("\n")
+          output.write("EOF\n")
+
+          output.write("UNPRUNABLE_LAYERS<<EOF\n")
+          for match in unprunable_layers:
+            output.write(match)
+            output.write("\n")
+          output.write("EOF\n")
+
+          output.write("UNPRUNABLE_VERSIONS<<EOF\n")
+          for match in unprunable_versions:
             output.write(match)
             output.write("\n")
           output.write("EOF\n")
