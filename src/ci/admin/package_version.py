@@ -2,10 +2,12 @@ import subprocess
 from typing import NamedTuple, Generator, TextIO
 from datetime import datetime, timedelta, timezone
 from functools import partial
+import json
 
 from .data_object import DataObject, parse, build
 from .gh_api import gh_api
 from .fzf import fzf_filter
+
 from cli_helper.log import log
 
 ###############################################################################
@@ -14,7 +16,7 @@ from cli_helper.log import log
 class PackageVersion(NamedTuple):
   id: str
   name: str
-  tags: tuple[str]
+  tags: str
   created_at: datetime
   updated_at: datetime
 
@@ -90,7 +92,7 @@ class PackageVersion(NamedTuple):
     )
     result = sort_versions(_read_and_parse_versions(fzf.stdout))
     if skip_last_tagged and result:
-      latest = next((version for version in reversed(result) if version.tags), None)
+      latest = next((version for version in reversed(result) if version.tags and version.tags != "[]"), None)
       if latest:
         log.warning("[{}] preserving most recently tagged version: {}", package_label, latest)
         result.remove(latest)
@@ -111,7 +113,8 @@ class PackageVersion(NamedTuple):
     noop: bool = False,
     versions: list["PackageVersion"] | None = None,
     if_package_exists: bool = False,
-    repository: str | None = None
+    repository: str | None = None,
+    skip_last_tagged: bool = False
   ) -> list["PackageVersion"]:
     if if_package_exists:
       # Check if the package exists, otherwise return without an error
@@ -149,10 +152,7 @@ class PackageVersion(NamedTuple):
       prompt=prompt,
       noninteractive=noninteractive,
       versions=versions,
-      # TODO(asorbini) this logic could be improved to detect filters which
-      # would end up deleting all versions, but that would require querying
-      # for all available (tagged) versions for the package.
-      skip_last_tagged=not filter
+      skip_last_tagged=skip_last_tagged
     )
 
     for version in to_be_deleted:
@@ -177,24 +177,75 @@ class PackageVersion(NamedTuple):
     cls,
     package: str,
     org: str | None = None,
-    max_age: timedelta | None = None,
+    min_age: timedelta | None = None,
     package_type: str = "container",
     noop: bool = False,
   ) -> list["PackageVersion"]:
     owner = org or "user"
-    if max_age is None:
-      max_age = cls.DefaultMaxAge
 
-    untagged_versions = cls.select(package, org, filter="'[] ", package_type=package_type)
+    tagged_versions = cls.select(package, org, filter="![] ", package_type=package_type)
+    tagged_names = [v.name for v in tagged_versions]
+    # Multi-platform Docker images will report only the top-level manifest as tagged.
+    # We must inspect the manifest with `docker buildx imagetools` to retrieve the
+    # hashes of all associated layers
+    if package_type == "container":
+      assert org is not None, "an organization is required"
+      tagged_layers = [layer
+        for manifest in tagged_versions
+        for layer in cls._inspect_docker_manifest(package, org, manifest)]
+      tagged_names.extend(tagged_layers)
+      tagged_names = sorted(set(tagged_names))
+  
+    untagged_versions = [
+      v
+      for v in cls.select(package, org, filter="'[] ", package_type=package_type)
+      if v.name not in tagged_names
+    ]
 
-    now = datetime.now(timezone.utc)
+    if min_age:
+      log.info("[{}][{}] considering only versions older than {}", owner, package, min_age)
+      now = datetime.now(timezone.utc)
+      prunable = [version for version in untagged_versions if (now - version.updated_at) >= min_age]
+    else:
+      prunable = untagged_versions
 
-    prunable = [version for version in untagged_versions if (now - version.updated_at) >= max_age]
-
-    log.info("[{}][{}] {} untagged versions older than {}", owner, package, len(prunable), max_age)
+    log.info("[{}][{}] {} prunable versions", owner, package, len(prunable))
     for i, version in enumerate(prunable):
+      log.info(" {}. {}", i + 1, version)
+    
+    log.info("[{}][{}] {} retained tagged versions", owner, package, len(tagged_versions))
+    for i, version in enumerate(tagged_versions):
+      log.info(" {}. {}", i + 1, version)
+    
+    log.info("[{}][{}] {} total retained versions", owner, package, len(tagged_names))
+    for i, version in enumerate(tagged_names):
       log.info(" {}. {}", i + 1, version)
 
     return cls.delete(
       package=package, org=org, package_type=package_type, versions=prunable, noop=noop
     )
+
+  @classmethod
+  def _inspect_docker_manifest(cls,
+      package: str,
+      org: str,
+      manifest: "PackageVersion") -> list[str]:
+    # tags is a Python string array encoded in a string
+    tags = eval(manifest.tags)
+    manifest_label = next(iter(tags))
+    manifest_image = f"ghcr.io/{org}/{package}:{manifest_label}"
+    cmd = [
+      f"docker buildx imagetools inspect {manifest_image} --raw | "
+      "jq -r \".manifests[].digest\""
+    ]
+    log.command(cmd)
+    result = subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE)
+    if not result.stdout:
+      raise RuntimeError("failed to detect layers for manifest", manifest_image)
+    layers = {
+      layer
+      for layer in result.stdout.decode().strip().splitlines()
+      for layer in [layer.strip()] if layer
+    }
+    return list(layers)
+

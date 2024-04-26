@@ -68,5 +68,5 @@ jobs:
           github-token: ${{ steps.config.outputs.LOGIN_GITHUB && secrets.GITHUB_TOKEN || '' }}
           github-user: ${{ steps.config.outputs.LOGIN_GITHUB && github.actor || '' }}
           dockerhub-token: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_TOKEN || '' }}
-          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && secrets.DOCKERHUB_USERNAME || '' }}
+          dockerhub-user: ${{ steps.config.outputs.LOGIN_DOCKERHUB && vars.DOCKERHUB_USERNAME || '' }}
 

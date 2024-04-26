@@ -1,10 +1,10 @@
-name: Run a script that uses the ci-admin script
+name: Run the ci-admin script
 description: |
-  Run a script that uses the ci-admin script
+  Run the ci-admin script
 
 inputs:
-  script:
-    description: Path to the script to run
+  args:
+    description: Arguments to pass to ci-admin
     required: true
   token:
     description: Authentication token.
@@ -22,6 +22,9 @@ inputs:
     description: DockerHub login token
   dockerhub-user:
     description: DockerHub user
+  output:
+    description: Dump stdout to a file
+    default: ci-admin.log
 
 runs:
   using: "composite"
@@ -59,7 +62,7 @@ runs:
         print("::add-mask::${{ inputs.token }}")
 
         stdout = Admin.run(
-          script = """${{ inputs.script }}""",
+          args = """${{ inputs.args }}""",
           image = "${{ inputs.image }}",
           cwd = "${{ inputs.cwd }}",
           token = "${{ inputs.token }}",

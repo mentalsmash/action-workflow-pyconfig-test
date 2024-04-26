@@ -21,13 +21,19 @@ class Admin:
   # Helper to run a command from an action/workflow
   ###############################################################################
   @classmethod
-  def run(cls, args: str, image: str | None = None, cwd: str | None = None, token: str | None = None, capture_output: bool=False) -> str | None:
+  def run(cls,
+      args: str | None = None,
+      script: str | None = None,
+      image: str | None = None,
+      cwd: str | None = None,
+      token: str | None = None,
+      capture_output: bool=False) -> str | None:
     cwd = Path(cwd) if cwd else Path.cwd()
     args = [
       shlex.quote(arg)
       for arg in args.strip().splitlines() if arg
       for arg in [arg.strip()] if arg
-    ]
+    ] if args else []
     if not token:
       token = os.environ.get("GH_TOKEN", "")
       if not token:
@@ -109,54 +115,54 @@ class Admin:
           filter=args.filter,
           noop=args.noop,
           if_package_exists=args.if_package_exists)
+      # elif args.action == "prune-versions":
+      #   all = PackageVersion.select(package=args.package, org=args.org)
+
+      #   if args.prunable:
+      #     if args.prunable == "-":
+      #       def _prunable():
+      #         return sys.stdin.readlines()
+      #     else:
+      #       def _prunable():
+      #         return Path(args.prunable).read_text().splitlines()
+      #     prunable_names = [
+      #       line
+      #       for line in _prunable()
+      #       for line in [line.strip()]
+      #       if line
+      #     ]
+      #   elif args.required:
+      #     if args.required == "-":
+      #       def _required():
+      #         return sys.stdin.readlines()
+      #     else:
+      #       def _required():
+      #         return Path(args.required).read_text().splitlines()
+      #     required_names = [
+      #       line
+      #       for line in _required()
+      #       for line in [line.strip()]
+      #       if line
+      #     ]
+      #     prunable_names = [v.name for v in all if v.name not in required_names]
+      #   else:
+      #     raise RuntimeError("one of --prunable or --required is required")
+
+      #   prunable = [pkg for pkg in all if pkg.name in prunable_names]
+
+      #   tabulate_columns(*PackageVersion._fields)
+      #   for version in PackageVersion.delete(
+      #       package=args.package,
+      #       org=args.org,
+      #       versions=prunable,
+      #       noop=args.noop,
+      #     ):
+      #       output(str(version))
       elif args.action == "prune-versions":
-        all = PackageVersion.select(package=args.package, org=args.org)
-
-        if args.prunable:
-          if args.prunable == "-":
-            def _prunable():
-              return sys.stdin.readlines()
-          else:
-            def _prunable():
-              return Path(args.prunable).read_text().splitlines()
-          prunable_names = [
-            line
-            for line in _prunable()
-            for line in [line.strip()]
-            if line
-          ]
-        elif args.required:
-          if args.required == "-":
-            def _required():
-              return sys.stdin.readlines()
-          else:
-            def _required():
-              return Path(args.required).read_text().splitlines()
-          required_names = [
-            line
-            for line in _required()
-            for line in [line.strip()]
-            if line
-          ]
-          prunable_names = [v.name for v in all if v.name not in required_names]
-        else:
-          raise RuntimeError("one of --prunable or --required is required")
-
-        prunable = [pkg for pkg in all if pkg.name in prunable_names]
-
-        tabulate_columns(*PackageVersion._fields)
-        for version in PackageVersion.delete(
-            package=args.package,
-            org=args.org,
-            versions=prunable,
-            noop=args.noop,
-          ):
-            output(str(version))
-      elif args.action == "prune-versions-untagged":
         cls.prune_versions_untagged(
           package=args.package,
           org=args.org,
-          prunable=prunable,
+          min_age=timedelta(days=args.min_age) if args.min_age else None,
           noop=args.noop)
       elif args.action == "nightly-cleanup":
         cls.nightly_cleanup(repo=args.repository, noop=args.noop)
@@ -331,19 +337,19 @@ class Admin:
     parser_prune_versions.add_argument(
       "-o", "--org", help="Target GitHub organization.", default=None
     )
-    # parser_prune_versions.add_argument(
-    #   "-a",
-    #   "--max-age",
-    #   help='Maximum number of days since the last update to consider the image "prunable" (floating point number).',
-    #   default=None,
-    #   type=float,
-    # )
-    mut_opts = parser_prune_versions.add_mutually_exclusive_group(required=True)
+    parser_prune_versions.add_argument(
+      "-a",
+      "--min-age",
+      help='Minum number of days since the last update to consider an image "prunable" (floating point number).',
+      default=None,
+      type=float,
+    )
+    # mut_opts = parser_prune_versions.add_mutually_exclusive_group(required=True)
 
-    mut_opts.add_argument("-P", "--prunable",
-      help="A file with a list of prunable versions or - to read it from stdin")
-    mut_opts.add_argument("-R", "--required",
-      help="A file with a list of unprunable versions or - to read it from stdin")
+    # mut_opts.add_argument("-P", "--prunable",
+    #   help="A file with a list of prunable versions or - to read it from stdin")
+    # mut_opts.add_argument("-R", "--required",
+    #   help="A file with a list of unprunable versions or - to read it from stdin")
 
     parser_nightly_cleanup = subparsers.add_parser(
       "nightly-cleanup", help="Clean up workflow runs for nightly releases"
@@ -418,13 +424,12 @@ class Admin:
       output(str(run))
 
   @classmethod
-  def prune_versions_untagged(cls, org, package, max_age, noop) -> None:
-    max_age = timedelta(days=max_age) if max_age else None
+  def prune_versions_untagged(cls, org, package, min_age, noop) -> None:
     tabulate_columns(*PackageVersion._fields)
     for run in PackageVersion.prune_untagged(
       package=package,
       org=org,
-      max_age=max_age,
+      min_age=min_age,
       noop=noop,
     ):
       output(str(run))
