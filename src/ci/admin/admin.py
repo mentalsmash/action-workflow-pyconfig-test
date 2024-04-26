@@ -338,14 +338,12 @@ class Admin:
     #   default=None,
     #   type=float,
     # )
-    mut_opts = parser_prune_versions.add_mutually_exclusive_group()
+    mut_opts = parser_prune_versions.add_mutually_exclusive_group(required=True)
 
     mut_opts.add_argument("-P", "--prunable",
-      help="A file with a list of prunable versions or - to read it from stdin",
-      required=True)
+      help="A file with a list of prunable versions or - to read it from stdin")
     mut_opts.add_argument("-R", "--required",
-      help="A file with a list of unprunable versions or - to read it from stdin",
-      required=True)
+      help="A file with a list of unprunable versions or - to read it from stdin")
 
     parser_nightly_cleanup = subparsers.add_parser(
       "nightly-cleanup", help="Clean up workflow runs for nightly releases"
