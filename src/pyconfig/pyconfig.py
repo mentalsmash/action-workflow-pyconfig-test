@@ -61,6 +61,18 @@ def tuple_to_dict(val: NamedTuple) -> dict:
 ###############################################################################
 #
 ###############################################################################
+def dict_bool_to_str(val: dict) -> dict:
+  for k in list(val.keys()):
+    v = val[k]
+    if isinstance(v, bool):
+      val[k] = k if v else ''
+    elif isinstance(v, dict):
+      val[k] = dict_bool_to_str(v)
+
+
+###############################################################################
+#
+###############################################################################
 def _select_attribute(ctx: tuple | dict, selector: str) -> str:
   def _getattr(obj: tuple | dict, k: str):
     if isinstance(obj, dict):
@@ -303,7 +315,12 @@ def configuration(
   else:
     workflow_mod = None
 
-  return github, inputs, (dict_to_tuple("settings", cfg_dict, bool_to_str=bool_to_str) if as_tuple else cfg_dict), workflow_mod
+  if as_tuple:
+    result = dict_to_tuple("settings", cfg_dict, bool_to_str=bool_to_str)
+  else:
+    result = dict_bool_to_str(cfg_dict)
+
+  return github, inputs, result, workflow_mod
 
 
 ###############################################################################
