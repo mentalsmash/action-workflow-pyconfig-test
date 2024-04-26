@@ -300,7 +300,7 @@ tracks:
     tracks_yml = self.storage / self.TracksConfigFile
     self.tracks: dict[str, ReleaseTrack] = (
       {} if not tracks_yml.exists()
-      else self.load_tracks(yaml.safe_load(tracks_yml.read_text()))
+      else self.load_tracks(yaml.safe_load(tracks_yml.read_text())["tracks"])
     )
 
   @classmethod
@@ -338,7 +338,7 @@ tracks:
     tracks = tracks.strip()
     if not tracks:
       tracks = self.DefaultTracks
-    self.tracks = self.load_tracks(yaml.safe_load(tracks))
+    self.tracks = self.load_tracks(yaml.safe_load(tracks)["tracks"])
 
     # Create base directory and write tracks.yml
     self.storage.mkdir(exist_ok=True, parents=True)
