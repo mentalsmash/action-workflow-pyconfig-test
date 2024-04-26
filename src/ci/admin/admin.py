@@ -117,44 +117,27 @@ class Admin:
           def _input():
             return Path(args.prunable).read_text().splitlines()
         
-        def _prunable():
-         for line in [
-            line
-            for line in _input()
-            for line in [line.strip()]
-            if line
-          ]:
-           yield line
-        
-        def _prune(filter: str) -> None:
-          # cls.delete_versions(org=org,)
-          for version in PackageVersion.delete(
+        prunable_names = [
+          line
+          for line in _input()
+          for line in [line.strip()]
+          if line
+        ]
+        prunable = [
+          pkg
+          for pkg in PackageVersion.select(
+            package=args.package,
+            org=args.org) if pkg.name in prunable_names
+        ]
+
+        tabulate_columns(*PackageVersion._fields)
+        for version in PackageVersion.delete(
             package=args.package,
             org=args.org,
-            filter=filter,
+            versions=prunable,
             noop=args.noop,
           ):
             output(str(version))
-
-        max_arg_len = 131072
-
-        tabulate_columns(*PackageVersion._fields)
-        prunable = _prunable()
-        batch = ""
-        next_line = next(prunable, None)
-        while next_line is not None:
-          line_token = "".join(("'", next_line))
-          if len(batch) + len(next_line) > max_arg_len:
-            _prune(batch)
-            batch = ""
-          batch = (
-            " | ".join((batch, line_token))
-            if batch else line_token
-          )
-          next_line = next(prunable, None)
-        if batch:
-          _prune(batch)
-
       elif args.action == "prune-versions-untagged":
         cls.prune_versions_untagged(
           package=args.package,
